@@ -1,5 +1,8 @@
 # CTF Playbook
 
+New to the ESP32? Read [background.md](background.md) first — it explains
+eFuses, partitions, app images and NVS, using real output from a badge.
+
 The order to work in, and the decisions that change what you do next. Menu
 numbers refer to `scripts\badge.ps1`.
 
