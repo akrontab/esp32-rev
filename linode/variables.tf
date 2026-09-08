@@ -8,9 +8,10 @@ variable "linode_token" {
 variable "gpu_type" {
   description = <<-EOT
     Linode GPU plan. Default is a single RTX 4000 Ada (cheapest GPU plan,
-    ~$0.52/hr, plenty for cracking). VERIFY the exact type id for your account
-    with:  linode-cli linodes types --json | jq '.[].id' | grep gpu
-    Multi-GPU plans (…a2, …a4) scale linearly for deep brute-force.
+    plenty for cracking). The older g1-gpu-rtx6000-* plans are often
+    unavailable. List plans without any CLI (public API), in PowerShell:
+      (irm https://api.linode.com/v4/linode/types).data | ? { $_.class -eq 'gpu' } | ft id,label
+    Multi-GPU plans (g2-gpu-rtx4000a2-*, ...a4-*) scale for deep brute-force.
   EOT
   type        = string
   default     = "g2-gpu-rtx4000a1-s"
@@ -18,9 +19,10 @@ variable "gpu_type" {
 
 variable "region" {
   description = <<-EOT
-    Region MUST be one that offers GPU plans (not all do). Check:
-      linode-cli regions list
-    GPU availability is limited to a handful of core regions.
+    Region MUST be one that offers GPU plans (not all do). List them without a
+    CLI (public API), in PowerShell:
+      (irm https://api.linode.com/v4/regions).data | ? { $_.capabilities -contains 'GPU Linodes' } | ft id,label
+    us-ord (Chicago) has GPU plans.
   EOT
   type        = string
   default     = "us-ord"

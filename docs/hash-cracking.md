@@ -73,8 +73,10 @@ account or spends money.
 
 - `cd linode && cp terraform.tfvars.example terraform.tfvars`, then set your
   API token in it (`linode_token = "..."`; the file is gitignored). Also set a
-  GPU-capable region and, ideally, `allowed_ssh_cidr` to your IP/32. Verify the
-  plan id: `linode-cli linodes types --json | jq -r '.[].id' | grep gpu`
+  GPU-capable region and, ideally, `allowed_ssh_cidr` to your IP/32. The
+  default plan `g2-gpu-rtx4000a1-s` (RTX 4000 Ada x1) suits most cases; list
+  plans without any CLI via the public API (PowerShell):
+  `(irm https://api.linode.com/v4/linode/types).data | ? { $_.class -eq 'gpu' } | ft id,label`
 - `terraform init`, then `terraform plan` to validate against the API for free
   before any `apply`. Full flow: [../linode/README.md](../linode/README.md).
 

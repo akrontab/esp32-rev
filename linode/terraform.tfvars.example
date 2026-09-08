@@ -9,11 +9,13 @@
 # REQUIRED. https://cloud.linode.com/profile/tokens (Linodes + Firewalls R/W).
 linode_token = "PASTE_YOUR_TOKEN_HERE"
 
-# Verify the exact GPU plan id for your account:
-#   linode-cli linodes types --json | jq -r '.[].id' | grep gpu
+# GPU plan. Default g2-gpu-rtx4000a1-s (RTX 4000 Ada x1) is the cheapest and
+# suits most cases. List plans without a CLI (public API), in PowerShell:
+#   (irm https://api.linode.com/v4/linode/types).data | ? { $_.class -eq 'gpu' } | ft id,label
 # gpu_type = "g2-gpu-rtx4000a1-s"
 
-# Must be a region that offers GPU plans:  linode-cli regions list
+# Region must offer GPU plans; us-ord (default) does. To list them:
+#   (irm https://api.linode.com/v4/regions).data | ? { $_.capabilities -contains 'GPU Linodes' } | ft id,label
 # region = "us-ord"
 
 # Lock SSH to your own IP - find it with: curl -s ifconfig.me

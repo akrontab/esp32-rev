@@ -14,12 +14,17 @@ The control plane never runs Terraform — you do.
    # edit terraform.tfvars: set linode_token = "..."
    ```
    `terraform.tfvars` is gitignored — the token never enters git.
-3. Check the region offers GPU plans and the plan id is valid for your account:
+3. Check the plan id and region. No linode-cli needed — the types/regions
+   endpoints are public. In PowerShell:
+   ```powershell
+   # GPU plans (the `id` is the gpu_type string):
+   (irm https://api.linode.com/v4/linode/types).data | ? { $_.class -eq 'gpu' } | ft id,label,vcpus,memory
+   # regions:
+   (irm https://api.linode.com/v4/regions).data | ? { $_.capabilities -contains 'GPU Linodes' } | ft id,label
    ```
-   linode-cli regions list
-   linode-cli linodes types --json | jq -r '.[].id' | grep gpu
-   ```
-   Set `region` / `gpu_type` in the tfvars if the defaults don't fit.
+   The default `g2-gpu-rtx4000a1-s` (RTX 4000 Ada x1) is the cheapest Ada plan;
+   the older `g1-gpu-rtx6000-*` plans are often unavailable. Set `region` /
+   `gpu_type` in the tfvars only if the defaults don't fit.
 4. `terraform init`
 
 ## Validate without spending (do this first)
