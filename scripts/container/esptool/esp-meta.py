@@ -18,7 +18,10 @@ PATTERNS = {
     # The 4.x spelling ("Chip is ...") is kept as an alternative so a pinned
     # older esptool still parses.
     "chip_model":    r"(?:Chip type:|Chip is)\s+([^\s(]+)",
-    "chip_revision": r"(?:Chip type:|Chip is)\s+\S+\s+\(revision\s+([^)]+)\)",
+    # Real output is "ESP32-S3 (QFN56) (revision v0.2)" - the package suffix
+    # sits between the name and the revision, so do not anchor them together.
+    "chip_revision": r"(?:Chip type:|Chip is)[^\n]*?\(revision\s+([^)]+)\)",
+    "chip_package":  r"(?:Chip type:|Chip is)\s+\S+\s+\((QFN\d+|[A-Z]{2,}\d*)\)",
     # "Detecting chip type...ESP32-S3" - printed with end="" so the value
     # lands on the same line.
     "chip_family":   r"Detecting chip type\.\.\.\s*(\S+)",
@@ -86,8 +89,9 @@ def main():
 
     print()
     print("=== target summary ===")
-    for k in ("chip_model", "chip_revision", "chip_arg", "features", "crystal",
-              "usb_mode", "mac", "flash_size", "flash_mfr", "flash_device"):
+    for k in ("chip_model", "chip_revision", "chip_package", "chip_arg",
+              "features", "crystal", "usb_mode", "mac",
+              "flash_size", "flash_mfr", "flash_device"):
         if out.get(k):
             print("  %-14s %s" % (k + ":", out[k]))
     locked = [n for n, _ in LOCK_HINTS if out.get(n)]

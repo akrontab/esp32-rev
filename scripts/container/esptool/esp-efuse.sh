@@ -25,8 +25,13 @@ fi
 record "efuse" "port=$SERIAL_PORT"
 register_artifact "$RAW"
 
+# The interpretation is the part you actually act on, so it gets its own
+# report file rather than living only in terminal scrollback.
+POSTURE="$DIR_REPORTS/security-posture.txt"
+
+{
 hr
-echo "### security posture"
+echo "### security posture   (run $RUN_ID)"
 hr
 python3 - "$RAW" <<'PY'
 import re, sys
@@ -73,6 +78,9 @@ else:
     print("  [+] No hard blockers detected in the summary text.")
     print("      Still skim the raw output above; naming varies by chip revision.")
 PY
-
 hr
-ok "eFuse summary saved to meta/efuse_summary.txt"
+} 2>&1 | tee "$POSTURE"
+
+register_artifact "$POSTURE"
+ok "eFuse summary: meta/efuse_summary.txt"
+ok "Security posture: reports/security-posture.txt"

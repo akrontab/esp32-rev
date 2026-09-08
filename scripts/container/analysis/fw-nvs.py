@@ -58,8 +58,14 @@ def render(path: str) -> tuple:
                 else:
                     blobdir = os.path.join(EXTRACT, "nvs_blobs")
                     os.makedirs(blobdir, exist_ok=True)
+                    # Include page/entry and state in the name. A key is
+                    # rewritten in place over time, so the same namespace+key
+                    # legitimately appears many times - naming by key alone
+                    # would silently keep only the last and discard exactly
+                    # the superseded values worth recovering.
                     safe = "".join(c if c.isalnum() or c in "._-" else "_"
                                    for c in "%s_%s" % (e.namespace, e.key))
+                    safe = "%s_p%02de%03d_%s" % (safe, page.index, e.entry_index, e.state)
                     blobpath = os.path.join(blobdir, safe + ".bin")
                     with open(blobpath, "wb") as fh:
                         fh.write(value)

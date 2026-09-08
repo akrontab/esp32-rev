@@ -121,14 +121,32 @@ function Test-DeviceInVm {
     (Get-VmSerialDevices) -contains $DevicePath
 }
 
+# vhci_hcd carries the USB/IP transport; the rest are the drivers that claim a
+# badge once it arrives. Loading them all up front is cheap and avoids the
+# worst failure mode in this whole pipeline.
+$script:VmModules = @(
+    'vhci-hcd',     # USB/IP virtual host controller - without it, attach fails
+    'cdc-acm',      # native-USB parts: ESP32-S2/S3/C3/C6 -> /dev/ttyACM*
+    'cp210x',       # Silicon Labs CP210x  -> /dev/ttyUSB*
+    'ch341',        # WCH CH340/CH341
+    'ftdi_sio',     # FTDI
+    'pl2303'        # Prolific
+)
+
 function Initialize-UsbipdVm {
     <#
-      The VM needs the vhci_hcd module before any attach will work. Docker
-      Desktop does not load it at boot, and the failure mode without it is a
-      confusing usbipd error, so we load it up front - it is a no-op if
-      already present.
+      Prepare the Docker VM's kernel to receive the badge.
+
+      Docker Desktop loads none of these at boot, and module autoloading does
+      not fire for a usbip-attached device. Without the right driver the
+      device attaches at USB level and then sits there with nothing claiming
+      it: usbipd reports success, dmesg shows the device, and no /dev node
+      ever appears. Loading them explicitly is a no-op when already present.
     #>
-    wsl.exe -d $script:DockerDistro -- sh -c 'modprobe vhci-hcd 2>/dev/null; true' 2>&1 | Out-Null
+    # Not named $script - that prefix is PowerShell's scope qualifier and
+    # reads as a bug even where it parses.
+    $modprobeCmd = ($script:VmModules | ForEach-Object { "modprobe $_ 2>/dev/null" }) -join '; '
+    wsl.exe -d $script:DockerDistro -- sh -c "$modprobeCmd; true" 2>&1 | Out-Null
 }
 
 function Connect-BadgeDevice {

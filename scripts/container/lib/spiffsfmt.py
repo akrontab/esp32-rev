@@ -77,6 +77,22 @@ class SpiffsScan:
     orphan_pages: int = 0
     total_pages: int = 0
     used_pages: int = 0
+    rejected_pages: int = 0     # looked like an index header but failed validation
+
+
+SPIFFS_TYPE_FILE = 1
+
+
+def _plausible_name(raw: bytes) -> bool:
+    """A real filename is printable and non-empty.
+
+    Compiled code is full of pages that coincidentally satisfy the index-page
+    header bits, so the name is the cheapest strong filter we have.
+    """
+    name = raw.split(b"\x00")[0]
+    if not name:
+        return False
+    return all(0x20 <= c < 0x7F for c in name)
 
 
 def _is_lookup_page(page_index: int, cfg: SpiffsConfig) -> bool:
@@ -118,6 +134,15 @@ def scan(data: bytes, cfg: SpiffsConfig = None) -> SpiffsScan:
                 continue
             size, obj_type = struct.unpack_from("<IB", page, cfg.hdr_aligned)
             name_raw = page[cfg.name_off:cfg.name_off + cfg.obj_name_len]
+
+            # Validate before trusting any of it. Scanning an app partition
+            # finds hundreds of pages whose header bits match by chance, and
+            # an unchecked size field (seen at 3 GB inside a 256 KB region)
+            # turns reassembly into an unbounded allocating loop.
+            if size > len(data) or obj_type != SPIFFS_TYPE_FILE or not _plausible_name(name_raw):
+                result.rejected_pages += 1
+                continue
+
             name = name_raw.split(b"\x00")[0].decode("utf-8", "replace")
             index_pages[base_id] = (pi, size, obj_type, name, deleted)
         else:

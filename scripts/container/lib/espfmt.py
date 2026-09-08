@@ -65,15 +65,42 @@ PART_SUBTYPES = {
 # helpers
 # ---------------------------------------------------------------------------
 
-def entropy(data: bytes) -> float:
+ENTROPY_SAMPLE = 1 << 20      # 1 MiB is ample to characterise a region
+
+
+def byte_counts(data: bytes) -> list:
+    """Histogram of byte values.
+
+    bytes.count() runs in C, so 256 passes beat one Python-level loop over the
+    data by a wide margin - which matters when the caller is sweeping an 8 MB
+    dump rather than a toy fixture.
+    """
+    return [data.count(i) for i in range(256)]
+
+
+def entropy(data: bytes, sample: int = ENTROPY_SAMPLE) -> float:
     """Shannon entropy in bits/byte. Near 8.0 means encrypted or compressed."""
     if not data:
         return 0.0
-    counts = [0] * 256
-    for b in data:
-        counts[b] += 1
+    if sample and len(data) > sample:
+        data = data[:sample]
     n = len(data)
+    counts = byte_counts(data)
     return -sum((c / n) * math.log2(c / n) for c in counts if c)
+
+
+def xor_all(data: bytes) -> int:
+    """XOR of every byte, via the histogram.
+
+    A value XORed an even number of times cancels, so only bytes with an odd
+    count contribute. That turns an N-step Python loop into 256 C-level
+    passes - the ESP image checksum covers megabytes of segment data.
+    """
+    x = 0
+    for value, count in enumerate(byte_counts(data)):
+        if count & 1:
+            x ^= value
+    return x
 
 
 def cstr(raw: bytes) -> str:
@@ -207,8 +234,7 @@ def parse_image(data: bytes, offset: int = 0, verify: bool = True) -> EspImage:
     if verify and checksum_pos < len(data):
         xor = 0xEF
         for seg in img.segments:
-            for b in data[seg.file_offset:seg.file_offset + seg.length]:
-                xor ^= b
+            xor ^= xor_all(data[seg.file_offset:seg.file_offset + seg.length])
         img.checksum_ok = (xor == data[checksum_pos])
     pos = checksum_pos + 1
 
