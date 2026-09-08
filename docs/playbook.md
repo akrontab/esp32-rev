@@ -73,7 +73,7 @@ will say so explicitly). Realistic options, roughly in order of effort:
    plaintext and often names the app, its version and its log tags.
 3. If the challenge intends it, the key may be recoverable from elsewhere in
    the CTF — a companion service, a firmware update file, or a leaked eFuse.
-4. JTAG (phase 2 tooling) can read decrypted flash **through** the MMU on
+4. JTAG (deferred tooling; see roadmap) can read decrypted flash **through** the MMU on
    parts where JTAG is not fused off, because the flash controller decrypts
    transparently for the CPU.
 
@@ -186,9 +186,11 @@ When the easy paths are exhausted:
   misses.
 - **Read the boot log again**, this time driving the badge's UI, buttons or
   radio while capturing.
-- **Disassemble.** This is where the Ghidra image (phase 2) comes in — load
-  the app partition at its DROM/IROM load addresses from `reports/triage.txt`.
-  The segment load addresses printed there are exactly what Ghidra needs.
+- **Disassemble.** `[33]` runs Ghidra headless — it maps the app image's
+  segments at their real load addresses automatically and exports decompiled C
+  for every function into `reports/ghidra/`. `[34]` opens the GUI over noVNC for
+  the deep dive. Reserve this for flags the badge computes at runtime; on a
+  stripped build it's thousands of unnamed functions. See [ghidra.md](ghidra.md).
 
 ---
 

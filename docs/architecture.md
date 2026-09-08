@@ -83,9 +83,9 @@ which badge is plugged into *this* laptop.
 ## Where the design deliberately stops
 
 - **No write path to the badge.** See [decisions.md D5](decisions.md#d5--read-only-toward-the-badge).
-- **No disassembler yet.** Quick looks are covered by strings, image parsing
-  and riscv64 objdump; real disassembly is Ghidra's job, still a deferred image
-  ([roadmap.md](roadmap.md)).
+- **Disassembly is the heavy option, used last.** Ghidra (Xtensa + RISC-V,
+  headless or noVNC GUI) is built, but on a stripped badge it means thousands of
+  unnamed functions - reserve it for runtime-computed flags ([ghidra.md](ghidra.md)).
 - **Wireless is recon, not attack.** BLE (scan/GATT) and WiFi (capabilities +
   SoftAP scan) enumerate the badge; deauth, handshake capture and monitor-mode
   sniffing need dedicated hardware and a real Linux host, and are out of scope

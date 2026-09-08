@@ -76,7 +76,7 @@ docker/
   esptool/               serial acquisition image
   analysis/              offline carving image
   hashcat/               local GPU cracking image (CUDA)
-  ghidra/                disassembly image (phase 2)
+  ghidra/                disassembly image (Xtensa + RISC-V)
 linode/                  Terraform for the escalation cracking rig
 wordlists/               big wordlists (git-ignored; fetch on demand)
 docs/                    architecture, playbook, decisions, troubleshooting, ...
@@ -247,8 +247,8 @@ base64 blobs, JWTs, MAC addresses, and 32–64 char hex (hashes and keys).
    erased-but-readable entries — those are stale values still on flash.
 4. **Consider that it is assembled at runtime.** If nothing is stored as a
    plain string, no pattern will find it; that is the point at which
-   disassembly (phase 2) or driving the badge's own UI while capturing the
-   console (`[8]`) becomes the cheaper path.
+   disassembly (`[33]`/`[34]`, [docs/ghidra.md](docs/ghidra.md)) or driving the
+   badge's own UI while capturing the console (`[8]`) becomes the cheaper path.
 
 ---
 
@@ -277,6 +277,7 @@ base64 blobs, JWTs, MAC addresses, and 32–64 char hex (hashes and keys).
 | [docs/hash-cracking.md](docs/hash-cracking.md)   | Cracking hashes: local GPU first, Linode rig as manual escalation |
 | [docs/ble.md](docs/ble.md)                       | Bluetooth LE challenges: scan, dump GATT, why BLE runs host-side |
 | [docs/wifi.md](docs/wifi.md)                     | WiFi capability recon: firmware analysis + host SoftAP scan |
+| [docs/ghidra.md](docs/ghidra.md)                 | Disassembly: headless decompilation + noVNC GUI (Xtensa/RISC-V) |
 | [docs/playbook.md](docs/playbook.md)               | The order to actually do things in, with decision points |
 | [docs/usb-passthrough.md](docs/usb-passthrough.md) | How the badge reaches a container, and what breaks       |
 | [docs/architecture.md](docs/architecture.md)       | Why it is built this way                                 |

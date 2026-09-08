@@ -157,6 +157,34 @@ function Invoke-Container {
     }
 }
 
+function Invoke-GhidraGui {
+    <#
+      Start Ghidra's GUI in the container, reachable over noVNC at
+      http://localhost:6080/vnc.html. Publishes 6080 to localhost only.
+    #>
+    $script:LastContainerExit = 1
+    if (-not (Test-ImageExists 'ghidra')) {
+        Write-Warn "Ghidra image is not built."
+        if (Confirm-Action "Build it now? (large)" -Default) {
+            if (-not (Build-Image -Name ghidra)) { return }
+        } else { return }
+    }
+    $targetPath = Get-TargetPath
+    if (-not $targetPath) { Write-Err "No target selected."; return }
+
+    Write-Info "Ghidra GUI will be at:  http://localhost:6080/vnc.html  (click Connect)"
+    Write-Info "The workspace is mounted at /work. Ctrl-C in this window stops it."
+    $runArgs = @(
+        'run', '--rm', '-it',
+        '-p', '127.0.0.1:6080:6080',
+        '-v', "$(ConvertTo-DockerPath $targetPath):/work",
+        '-e', "TARGET=$($script:State.Target)",
+        $script:Images['ghidra'], 'gh-gui.sh'
+    )
+    & docker @runArgs
+    $script:LastContainerExit = $LASTEXITCODE
+}
+
 function Enter-ContainerShell {
     param([Parameter(Mandatory)][string]$Image, [switch]$WithDevice)
     Write-Info "Workspace is mounted at /work. Tools are on PATH. 'exit' returns to the menu."

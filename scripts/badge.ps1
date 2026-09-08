@@ -85,8 +85,8 @@ function Invoke-EnvironmentCheck {
     foreach ($row in Get-ImageStatus) {
         if ($row.Status -eq 'built') {
             Write-Ok ("image {0,-9} {1,-8} built {2}" -f $row.Image, $row.Size, $row.Built)
-        } elseif ($row.Image -eq 'ghidra') {
-            Write-Info ("image {0,-9} not built (optional, phase 2)" -f $row.Image)
+        } elseif ($row.Image -in 'ghidra', 'hashcat') {
+            Write-Info ("image {0,-9} not built (optional; build when needed)" -f $row.Image)
         } else {
             Write-Warn ("image {0,-9} not built - use [2]" -f $row.Image)
         }
@@ -122,7 +122,7 @@ function Invoke-BuildImages {
     Write-Host "  2) analysis  - offline carving and analysis"
     Write-Host "  3) both"
     Write-Host "  4) hashcat   - local GPU hash cracking (CUDA base + rockyou; large)"
-    Write-Host "  5) ghidra    - disassembly (phase 2; large download)"
+    Write-Host "  5) ghidra    - disassembly, Xtensa + RISC-V (large download)"
     Write-Host "  (BLE needs no image - it runs host-side in the venv; see docs/ble.md)"
     $pick = Read-Host "Which"
     $noCache = Confirm-Action "Build without cache?"
@@ -191,6 +191,20 @@ function Invoke-WifiScan {
         Write-Info "Passive WLAN scan - looking for a badge access point."
         & $v.Python (Join-Path $script:RepoRoot "scripts\host\wifi\wifi-scan.py")
     } finally { $env:WORK = $prev }
+}
+
+function Invoke-GhidraHeadless {
+    if (-not (Assert-Target)) { return }
+    $img = Read-Host "App image to analyze [parts/app0.bin]"
+    if (-not $img) { $img = 'parts/app0.bin' }
+    $full = Get-ArtifactPath ($img -replace '/', '\')
+    if (-not (Test-Path $full)) {
+        Write-Warn "$img not found. Run the analysis pipeline (split) first to produce parts\."
+        return
+    }
+    Write-Info "Headless Ghidra: maps segments at their load addresses, analyzes, exports decompilation."
+    Write-Info "This can take several minutes on a full app image."
+    Invoke-Container -Image ghidra -Command @('gh-analyze.sh', "/work/$img")
 }
 
 function Invoke-HashId {
@@ -408,6 +422,8 @@ function Show-Menu {
     Write-Host "   31) WiFi capabilities (from dump)    32) Scan for badge AP (host)"
     Write-Host "  HASH CRACKING  (local GPU first; Linode rig is manual escalation)" -ForegroundColor Yellow
     Write-Host "   29) Identify hashes in workspace     30) Crack locally (GPU)"
+    Write-Host "  DISASSEMBLY  (Ghidra: Xtensa + RISC-V)" -ForegroundColor Yellow
+    Write-Host "   33) Headless analyze app image       34) Ghidra GUI (noVNC :6080)"
     Write-Host "  WORKSPACE" -ForegroundColor Yellow
     Write-Host "   18) View reports                     19) Verify artefact hashes"
     Write-Host "   20) Workspace summary"
@@ -450,6 +466,8 @@ function Invoke-MenuChoice {
         '30' { Invoke-CrackLocal }
         '31' { Invoke-WifiCapabilities }
         '32' { Invoke-WifiScan }
+        '33' { Invoke-GhidraHeadless }
+        '34' { if (Assert-Target) { Invoke-GhidraGui } }
         '27' {
             $a = Read-Host "Badge BD address"
             $c = Read-Host "Notify characteristic UUID"

@@ -1,12 +1,10 @@
-# Ghidra image (phase 2 — not built yet)
+# Ghidra image
 
-Intentionally empty. Menu option `[2] -> 4` reports that no Dockerfile exists
-here rather than pretending otherwise.
+Built. Ghidra 12.1.3 with **native Xtensa + RISC-V**, plus a noVNC GUI stack.
 
-The design is already decided — headless analysis for repeatable per-dump runs
-plus an optional noVNC GUI on `localhost:6080` — and the implementation notes,
-including the memory-mapping detail that makes ESP32 disassembly useful rather
-than noise, are in [../../docs/roadmap.md](../../docs/roadmap.md#ghidra-image--disassembly).
+- Headless analysis exports decompilation/symbols/strings into the workspace.
+- GUI over noVNC at http://localhost:6080/vnc.html.
 
-Build it when static analysis stops paying, i.e. when the flag is computed at
-runtime rather than stored.
+Driven from the control plane (menu `[33]` headless, `[34]` GUI) and documented
+in [../../docs/ghidra.md](../../docs/ghidra.md). Processor support is stock —
+no third-party module — because Ghidra 12 ships Xtensa natively.

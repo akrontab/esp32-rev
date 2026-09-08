@@ -120,6 +120,11 @@ Ghidra and JTAG are documented but deferred.
 headless analysis for repeatable per-dump runs, plus an optional GUI served
 over noVNC in a browser. See [roadmap.md](roadmap.md).
 
+**Update (since):** the initial scope has been extended well past phase 1 —
+BLE recon (D13), hash cracking (D14), WiFi recon (D15), and Ghidra itself
+(headless + noVNC GUI, [ghidra.md](ghidra.md)) are all built. Only JTAG and
+wireless *attack/capture* remain deferred.
+
 ---
 
 ## D10 — radare2 dropped from the analysis image

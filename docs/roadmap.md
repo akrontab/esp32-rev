@@ -8,38 +8,12 @@
 - WiFi recon — firmware capabilities + host SoftAP scan ([wifi.md](wifi.md))
 - Hash cracking — local GPU first, Linode rig as manual escalation
   ([hash-cracking.md](hash-cracking.md))
+- Disassembly — Ghidra headless (Xtensa + RISC-V) with segment-accurate
+  loading, plus a noVNC GUI ([ghidra.md](ghidra.md)). 4,672 functions
+  decompiled from the 2025 badge.
 
 The items below are deliberately deferred, not forgotten. Each notes what
 would trigger building it.
-
----
-
-## Ghidra image — disassembly
-
-**Build it when:** the flag is not in strings, NVS or a filesystem, i.e. it is
-computed at runtime.
-
-**Decided design** (recorded when the project was scoped):
-
-- Headless `analyzeHeadless` for repeatable per-dump analysis, so every new
-  dump gets disassembly, decompilation and symbol/string reports as files
-  without interaction.
-- Plus an optional GUI served over noVNC, opened in a browser at
-  `localhost:6080`, for real interactive exploration.
-- One image, ~2–3 GB.
-
-**Notes for the implementation:**
-
-- Ghidra has native Xtensa support in recent versions, covering ESP32/S2/S3;
-  RISC-V covers C3/C6/H2.
-- Load the app partition (`parts/factory.bin` or `parts/ota_0.bin`), not the
-  whole flash dump.
-- The segment load addresses needed for correct memory mapping are already
-  printed by `[13]` triage — `seg0 load=0x3f400020` style lines. Map DROM and
-  IROM segments at those addresses or cross-references will be meaningless.
-- The app descriptor gives the exact IDF version, which lets you diff against
-  a stock build of the same version to separate badge code from SDK code —
-  usually the single biggest time saver on an ESP32 binary.
 
 ---
 
