@@ -23,7 +23,7 @@ variable "region" {
     GPU availability is limited to a handful of core regions.
   EOT
   type        = string
-  default     = "us-iad"
+  default     = "us-ord"
 }
 
 variable "image" {

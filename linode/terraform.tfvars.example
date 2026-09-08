@@ -14,7 +14,7 @@ linode_token = "PASTE_YOUR_TOKEN_HERE"
 # gpu_type = "g2-gpu-rtx4000a1-s"
 
 # Must be a region that offers GPU plans:  linode-cli regions list
-# region = "us-iad"
+# region = "us-ord"
 
 # Lock SSH to your own IP - find it with: curl -s ifconfig.me
 # allowed_ssh_cidr = "203.0.113.7/32"
