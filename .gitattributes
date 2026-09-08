@@ -1,0 +1,17 @@
+# Line endings matter more than usual in this repo: the shell and Python files
+# under scripts/container are COPYed into Linux images and executed there. A
+# CRLF checkout on Windows would give them a "\r" in the shebang and every
+# script would fail with a confusing "bad interpreter" error.
+* text=auto eol=lf
+
+# Anything that runs inside a container must be LF.
+*.sh   text eol=lf
+*.py   text eol=lf
+Dockerfile text eol=lf
+
+# PowerShell runs on the host and is happier with native Windows endings.
+*.ps1  text eol=crlf
+
+# Never let git rewrite captured firmware.
+*.bin  binary
+*.img  binary

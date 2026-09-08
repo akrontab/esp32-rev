@@ -1,0 +1,23 @@
+# Captured artefacts. Firmware dumps are large, and on a CTF badge they can
+# contain the answer - keeping them out of git means pushing this repo can
+# never leak a flag or a credential recovered from someone's hardware.
+workspace/*
+!workspace/.gitkeep
+
+# Host-side virtual environment (recreated by the control plane on demand).
+.venv/
+
+# Control-plane state: selected target, attached bus id, chosen baud.
+# Machine-local by definition.
+.badge-state.json
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Editor / OS noise
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
+*.swp

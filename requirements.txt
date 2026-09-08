@@ -1,0 +1,4 @@
+# Host-side helpers only. All firmware tooling runs in containers - see docs/.
+# Pinned so a rebuilt venv mid-CTF behaves identically to the one you started with.
+rich==15.0.0        # tables and colour for host-side status and report output
+pyserial==3.5       # COM-port enumeration when diagnosing a failed USB/IP attach
