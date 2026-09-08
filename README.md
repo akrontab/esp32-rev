@@ -65,28 +65,42 @@ scripts/
   badge.ps1              control plane - the only thing you run directly
   lib/                   PowerShell modules (state, docker, usbipd, venv)
   host/                  host-side Python helpers, run inside .venv
+    ble/                 BLE central (bleak, Windows stack)
+    wifi/                WiFi scan (Windows WLAN service)
   container/
-    lib/                 format parsers shared by both images
+    lib/                 format parsers shared by the images
     esptool/             hardware-facing tools
-    analysis/            offline analysis tools
+    analysis/            offline analysis tools (incl. fw-wifi)
+    hashcat/             local GPU hash cracking
 docker/
   esptool/               serial acquisition image
   analysis/              offline carving image
+  hashcat/               local GPU cracking image (CUDA)
   ghidra/                disassembly image (phase 2)
-docs/                    architecture, playbook, decisions, troubleshooting
+linode/                  Terraform for the escalation cracking rig
+wordlists/               big wordlists (git-ignored; fetch on demand)
+docs/                    architecture, playbook, decisions, troubleshooting, ...
 workspace/               per-target artefacts (git-ignored)
-requirements.txt         pinned host-side dependencies
+requirements.txt         pinned host-side deps (rich, pyserial, bleak)
 ```
 
-### Two images, two privilege levels
+### Where things run, and why
 
-| Image               | Gets the serial device | Purpose                          |
-| ------------------- | ---------------------- | -------------------------------- |
-| `esp32-re/esptool`  | yes (`--device`)       | Anything that talks to the badge |
-| `esp32-re/analysis` | **no**                 | Offline carving and analysis     |
+Three container images at two privilege levels, plus two host-side capabilities
+that **cannot** be containerised on Docker Desktop/WSL2 and so run in the venv
+against the Windows stack directly:
 
-The split is deliberate: analysis code can never accidentally reach the
-hardware, no matter what it does.
+| Capability | Runs in | Gets the hardware? |
+| --- | --- | --- |
+| `esp32-re/esptool` | container | yes (`--device` serial) — the only thing that talks to the badge |
+| `esp32-re/analysis` | container | **no** — offline carving/analysis, incl. WiFi capability recon |
+| `esp32-re/hashcat` | container | GPU (`--gpus all`) — local hash cracking |
+| BLE (scan/GATT) | **host venv** | Windows Bluetooth stack — [containers can't do BLE](docs/ble.md) |
+| WiFi scan | **host venv** | Windows WLAN service — same reason |
+
+The container split is deliberate: analysis and cracking code can never reach
+the serial hardware. BLE and WiFi are host-side because AF_BLUETOOTH and
+wireless adapters aren't available inside Docker Desktop containers at all.
 
 ---
 
@@ -262,9 +276,10 @@ base64 blobs, JWTs, MAC addresses, and 32–64 char hex (hashes and keys).
 | [docs/background.md](docs/background.md)         | **New to ESP32 RE? Start here.** How to read a dump: eFuses, partitions, app images, NVS |
 | [docs/hash-cracking.md](docs/hash-cracking.md)   | Cracking hashes: local GPU first, Linode rig as manual escalation |
 | [docs/ble.md](docs/ble.md)                       | Bluetooth LE challenges: scan, dump GATT, why BLE runs host-side |
+| [docs/wifi.md](docs/wifi.md)                     | WiFi capability recon: firmware analysis + host SoftAP scan |
 | [docs/playbook.md](docs/playbook.md)               | The order to actually do things in, with decision points |
 | [docs/usb-passthrough.md](docs/usb-passthrough.md) | How the badge reaches a container, and what breaks       |
 | [docs/architecture.md](docs/architecture.md)       | Why it is built this way                                 |
 | [docs/decisions.md](docs/decisions.md)             | Decision log, including validation evidence              |
 | [docs/troubleshooting.md](docs/troubleshooting.md) | Symptom-to-fix table                                     |
-| [docs/roadmap.md](docs/roadmap.md)                 | Phase 2: Ghidra, JTAG, wireless                          |
+| [docs/roadmap.md](docs/roadmap.md)                 | What's built vs. deferred: Ghidra, JTAG, WiFi attacks    |

@@ -82,3 +82,29 @@ powershell -ExecutionPolicy Bypass -File .\scripts\badge.ps1
 
 Venv activation itself does not need a policy change — it sets the environment
 directly instead of running `Activate.ps1`.
+
+## BLE scan/dump finds nothing or won't connect
+
+A BLE peripheral accepts one central at a time — close nRF Connect or any other
+connection to the badge and retry. Full detail: [ble.md](ble.md). BLE runs
+host-side; if it reports bleak missing, run `[V]` to rebuild the venv.
+
+## WiFi scan shows no badge AP
+
+The badge may not host an access point — run `[31]` first to see whether the
+firmware even uses SoftAP (the 2025 badge uses ESP-NOW, no AP). If it should
+host one, power-cycle it and rescan; SoftAP often starts only in a certain mode.
+See [wifi.md](wifi.md).
+
+## hashcat: "No devices found" / falls back to CPU
+
+The GPU isn't reaching the container. Check `docker run --rm --gpus all
+nvidia/cuda:12.4.1-base-ubuntu22.04 nvidia-smi` works. The image must use the
+`-devel-` CUDA base (for `libnvrtc`) and run with `NVIDIA_DRIVER_CAPABILITIES=all`
+— the control plane sets both. See [hash-cracking.md](hash-cracking.md).
+
+## A menu action seems to run but prints nothing
+
+Interactive use is fine; this only happens when driving the menu with *piped*
+input (e.g. scripted testing) for actions that stream subprocess output. Run the
+tool directly (or use the container/host shell) if you need captured output.

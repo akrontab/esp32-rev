@@ -194,6 +194,36 @@ challenge — through the control-plane menu, into hashed workspace files.
 
 ---
 
+## D14 — Hash cracking: local GPU container first, Linode rig by hand
+
+**Decision.** Cracking runs in `esp32-re/hashcat` on the local GPU
+(`--gpus all`, `NVIDIA_DRIVER_CAPABILITIES=all`, `-devel-` CUDA base for
+`libnvrtc`). The Linode GPU rig is Terraform the **user** applies/destroys, and
+only as an escalation when local finds nothing in ~30 min. The control plane
+never provisions cloud resources.
+
+**Why.** Fast unsalted hashes of dictionary words crack on the laptop RTX 3060
+in seconds (both 2025 badge SHA-1s fell in 27s), so the cloud is wasteful for
+the common case and its hourly GPU billing is a foot-gun. Escalation is a
+deliberate human decision. rockyou + OneRule are baked into the image for
+offline use; big lists stay gitignored like dumps. Full rationale:
+[hash-cracking.md](hash-cracking.md).
+
+## D15 — WiFi recon is offline + host-side, and recon-only
+
+**Decision.** WiFi capability analysis runs offline in the analysis container
+(`fw-wifi.py`, reads the dump/NVS); the live SoftAP scan runs host-side in the
+venv via the Windows WLAN service. No attack tooling.
+
+**Why.** Same containerisation wall as BLE — a Docker Desktop container has no
+wireless adapter or WiFi stack, so live scanning must be host-side. Reading
+what the firmware *can* do (SoftAP/STA/ESP-NOW/HTTP/SmartConfig) and what it
+stores is pure offline analysis of the dump we already have. Deauth/capture/
+monitor-mode are attack, need dedicated hardware + Linux, and are deferred
+([wifi.md](wifi.md), [roadmap.md](roadmap.md)).
+
+---
+
 ## Validation
 
 The format parsers were checked against ground truth from Espressif's own

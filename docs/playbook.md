@@ -146,6 +146,22 @@ the 2025 badge's cipher transforms.
 
 ---
 
+## Phase 4bb — WiFi capability check
+
+Cheap and worth doing on any badge. See [wifi.md](wifi.md).
+
+1. `[31]` — read WiFi capabilities from the dump: which features the firmware
+   uses (SoftAP, station, ESP-NOW, HTTP server, SmartConfig…) and any stored
+   SSID/password in NVS, including erased ones. This tells you the surface
+   before you touch the radio. (The 2025 badge came back ESP-NOW + HTTP server
+   + SmartConfig, no stored creds — so it's badge-to-badge, not AP-joining.)
+2. `[32]` — passive host scan for the badge's own access point. If it hosts an
+   open AP and `[31]` showed an HTTP server, connect from Windows and probe it.
+
+Attacking WiFi (deauth, capture, monitor mode) is out of scope — recon only.
+
+---
+
 ## Phase 4c — crack any hashes found
 
 Badge challenges often end in a hash (the 2025 badge served two SHA-1s over

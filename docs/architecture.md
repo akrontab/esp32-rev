@@ -3,25 +3,36 @@
 ## Shape
 
 ```
-        PowerShell control plane  (scripts/badge.ps1)
-        state | usbipd | docker | venv
-                    |
-        +-----------+-----------------------+
-        |                                   |
-  esp32-re/esptool                   esp32-re/analysis
-  --device=/dev/ttyUSB0              no device, ever
-        |                                   |
-        +------------> workspace/<target> <-+
-                       (bind-mounted at /work)
-                               ^
-                               |
-                    host helpers in .venv
-                    (verify, summary)
+              PowerShell control plane  (scripts/badge.ps1)
+              state | usbipd | docker | venv
+                              |
+   containers  +--------------+--------------+---------------+
+               |              |              |               |
+        esp32-re/esptool  esp32-re/analysis  esp32-re/hashcat |
+        --device=serial   no device, ever    --gpus all       |
+               |              |  (fw-wifi)     (local crack)   |
+               +--------------+--------------+---------------+-+
+                              |                              |
+                    workspace/<target>  <---- host venv (.venv) ----+
+                    (bind-mounted /work)      verify | summary       |
+                              ^               BLE (bleak, Windows)   |
+                              |               WiFi scan (netsh)      |
+                    Linode rig (Terraform, by hand) --- escalation --+
+                    remote GPU for heavy hash cracking
 ```
 
-The workspace is the only thing the two images share, and it is the unit of
-work: one directory per badge, holding every artefact, report and log for that
-engagement.
+Everything shares one thing: `workspace/<target>`, the unit of work — one
+directory per badge holding every artefact, report and log. Containers reach it
+as a bind mount at `/work`; host-side tools (BLE, WiFi, verify) write into it
+directly.
+
+Two things run **outside** containers on purpose, because Docker Desktop/WSL2
+cannot give a container the hardware they need:
+- **BLE and WiFi** — no Bluetooth socket family or wireless adapter in
+  containers, so they run in the venv against the Windows stack ([ble.md](ble.md),
+  [wifi.md](wifi.md)).
+- **The Linode cracking rig** — a remote GPU box the user brings up by hand
+  with Terraform only when local cracking stalls ([hash-cracking.md](hash-cracking.md)).
 
 ## Why a control plane at all
 
@@ -72,8 +83,10 @@ which badge is plugged into *this* laptop.
 ## Where the design deliberately stops
 
 - **No write path to the badge.** See [decisions.md D5](decisions.md#d5--read-only-toward-the-badge).
-- **No disassembler in phase 1.** Quick looks are covered by strings, image
-  parsing and riscv64 objdump; real disassembly is Ghidra's job and Ghidra is
-  a phase-2 image.
-- **No wireless tooling.** A badge's BLE/WiFi surface is a genuinely different
-  engagement with different host requirements; see [roadmap.md](roadmap.md).
+- **No disassembler yet.** Quick looks are covered by strings, image parsing
+  and riscv64 objdump; real disassembly is Ghidra's job, still a deferred image
+  ([roadmap.md](roadmap.md)).
+- **Wireless is recon, not attack.** BLE (scan/GATT) and WiFi (capabilities +
+  SoftAP scan) enumerate the badge; deauth, handshake capture and monitor-mode
+  sniffing need dedicated hardware and a real Linux host, and are out of scope
+  ([wifi.md](wifi.md), [roadmap.md](roadmap.md)).

@@ -1,6 +1,13 @@
 # Roadmap
 
-Phase 1 (built): serial acquisition and offline static analysis.
+**Built and validated on the 2025 badge:**
+- Serial acquisition (chip ID, eFuses, partition table, full flash dump)
+- Offline analysis (triage, partition carving, filesystem + NVS extraction,
+  flag/secret hunting)
+- BLE recon — scan, GATT enumeration, read-all (host-side; [ble.md](ble.md))
+- WiFi recon — firmware capabilities + host SoftAP scan ([wifi.md](wifi.md))
+- Hash cracking — local GPU first, Linode rig as manual escalation
+  ([hash-cracking.md](hash-cracking.md))
 
 The items below are deliberately deferred, not forgotten. Each notes what
 would trigger building it.
@@ -52,27 +59,29 @@ computed at runtime.
 
 ---
 
-## BLE — done (host-side)
+## Wireless recon — done (host-side)
 
-BLE GATT enumeration against the badge's own services is **built** and
-validated on the 2025 badge. It runs host-side in the venv via `bleak`, not in
-a container, because Bluetooth cannot be containerised on Docker Desktop/WSL2.
-See [ble.md](ble.md) and decision [D13](decisions.md#d13--ble-tooling-runs-host-side-not-in-a-container).
+BLE and WiFi **enumeration** are built and validated on the 2025 badge, both
+host-side (Docker Desktop can't give a container the radios):
 
-Menu `[25]`/`[26]`/`[27]`: scan, dump GATT + read all characteristics,
-subscribe to notifications / write.
+- BLE `[25]`/`[26]`/`[27]`: scan, dump GATT + read all, notify/write.
+- WiFi `[31]`/`[32]`: firmware capabilities + stored config, and a host SoftAP
+  scan. See [wifi.md](wifi.md), [ble.md](ble.md), [D13](decisions.md#d13--ble-tooling-runs-host-side-not-in-a-container).
 
-## Wireless — still open
+## Wireless attack / capture — still open
 
-**Build it when:** a challenge needs more than reading the badge's own GATT.
+**Build it when:** a challenge needs more than reading the badge's own
+services — i.e. observing or injecting radio traffic. All of this needs
+dedicated hardware and a real Linux host, not a Docker Desktop container:
 
 - **BLE sniffing** — capturing traffic *between* the badge and another device
-  (e.g. watching a pairing or a notification exchange) needs dedicated
-  hardware: an nRF52840 dongle running Sniffle, or a TI CC26x2. This is
-  separate from acting as a central, which is already done.
-- **WiFi** — if a badge exposes a SoftAP or a network service, scanning and
-  talking to it is a normal-networking job and does not need the radio-level
-  tooling above.
+  (a pairing, a notification exchange): nRF52840 running Sniffle, or a TI
+  CC26x2.
+- **ESP-NOW capture** — the 2025 badge uses ESP-NOW (badge-to-badge). Reading
+  it live needs a second ESP32 in promiscuous mode acting as a capture node — a
+  natural companion device rather than a container tool.
+- **WiFi monitor mode / deauth / handshake capture** — an adapter that supports
+  monitor mode + injection, driven from Linux. Attack, not recon.
 
 ---
 

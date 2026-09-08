@@ -169,6 +169,30 @@ function Invoke-HostBle {
     }
 }
 
+function Invoke-WifiCapabilities {
+    # Offline: what WiFi the firmware can do + any stored config, from the dump.
+    if (-not (Assert-Target)) { return }
+    if (-not (Test-DumpPresent)) {
+        Write-Warn "No flash dump yet - WiFi capability analysis reads the firmware."
+        if (-not (Confirm-Action "Continue anyway?")) { return }
+    }
+    Invoke-Container -Image analysis -Command @('fw-wifi.py')
+}
+
+function Invoke-WifiScan {
+    # Live: passive scan for the badge's SoftAP via the Windows WLAN service.
+    # Host-side for the same reason as BLE - no adapter passthrough in containers.
+    if (-not (Assert-Target)) { return }
+    $v = Get-VenvPaths
+    if (-not (Test-Path $v.Python)) { Write-Warn "Host venv not available - run [V] first."; return }
+    Enable-Venv | Out-Null
+    $prev = $env:WORK; $env:WORK = (Get-TargetPath)
+    try {
+        Write-Info "Passive WLAN scan - looking for a badge access point."
+        & $v.Python (Join-Path $script:RepoRoot "scripts\host\wifi\wifi-scan.py")
+    } finally { $env:WORK = $prev }
+}
+
 function Invoke-HashId {
     if (-not (Assert-Target)) { return }
     Write-Info "Scanning the workspace for hash-shaped strings (strings, NVS, BLE, extracted files)."
@@ -380,6 +404,8 @@ function Show-Menu {
     Write-Host "  BLUETOOTH  (BLE challenges - host-side via venv)" -ForegroundColor Yellow
     Write-Host "   25) Scan for BLE devices             26) Dump badge GATT + read all"
     Write-Host "   27) Notifications / write"
+    Write-Host "  WIFI  (capability recon)" -ForegroundColor Yellow
+    Write-Host "   31) WiFi capabilities (from dump)    32) Scan for badge AP (host)"
     Write-Host "  HASH CRACKING  (local GPU first; Linode rig is manual escalation)" -ForegroundColor Yellow
     Write-Host "   29) Identify hashes in workspace     30) Crack locally (GPU)"
     Write-Host "  WORKSPACE" -ForegroundColor Yellow
@@ -422,6 +448,8 @@ function Invoke-MenuChoice {
         '26' { Invoke-BleDump }
         '29' { Invoke-HashId }
         '30' { Invoke-CrackLocal }
+        '31' { Invoke-WifiCapabilities }
+        '32' { Invoke-WifiScan }
         '27' {
             $a = Read-Host "Badge BD address"
             $c = Read-Host "Notify characteristic UUID"
