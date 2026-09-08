@@ -80,10 +80,10 @@ requirements.txt         pinned host-side dependencies
 
 ### Two images, two privilege levels
 
-| Image | Gets the serial device | Purpose |
-|---|---|---|
-| `esp32-re/esptool` | yes (`--device`) | Anything that talks to the badge |
-| `esp32-re/analysis` | **no** | Offline carving and analysis |
+| Image               | Gets the serial device | Purpose                          |
+| ------------------- | ---------------------- | -------------------------------- |
+| `esp32-re/esptool`  | yes (`--device`)       | Anything that talks to the badge |
+| `esp32-re/analysis` | **no**                 | Offline carving and analysis     |
 
 The split is deliberate: analysis code can never accidentally reach the
 hardware, no matter what it does.
@@ -129,6 +129,91 @@ own tools — see [docs/decisions.md](docs/decisions.md#validation).
 
 ---
 
+## Flag hunting and patterns
+
+**Read this before the contest.** The hunt (`[17]`, and stage 5 of `[12]`) is
+what turns a 4 MB dump into a short list of leads. Its default patterns are a
+*starting point* — the moment you learn the event's actual flag format, tell
+the hunt about it or you will scroll past your own answer.
+
+### What it searches
+
+`reports/strings.txt` — every string from the raw dump, every carved
+partition, and every extracted file, in both 8-bit and UTF-16, each line
+prefixed with the file it came from. Hits are therefore always attributable:
+
+```
+194:extract/storage/flag.txt: CTF{spiffs_flag_here}
+```
+
+Results land in `reports/hunt.txt`, with a **highest-value leads** section at
+the bottom that pulls out flag-shaped strings. Read that first.
+
+### Adding the event's flag format
+
+Create `workspace/<target>/patterns.txt`, one regex per line, then re-run
+`[17]`. No rebuild needed — the file is read from the mounted workspace.
+
+```
+# workspace/defcon-badge/patterns.txt
+DC32\{[^}]{0,120}\}
+sk_live_[A-Za-z0-9]{16,}
+```
+
+> **This file *replaces* the built-in patterns, it does not add to them.**
+> If you want the defaults too, copy them out of `DEFAULT_PATTERNS` at the top
+> of `scripts/container/analysis/fw-hunt.sh` into your file. Forgetting this is
+> the easy way to accidentally narrow your search to one pattern.
+
+To change the defaults permanently instead, edit that `DEFAULT_PATTERNS` block
+and rebuild the analysis image (`[2]`).
+
+### Regex flavour — the gotcha
+
+Patterns are **ripgrep (Rust regex)**, not PCRE. Rust rejects pointless
+escapes rather than ignoring them: `\"` is a hard error, not a quoted `"`.
+Put quote characters into a class bare — `["':= ]`.
+
+This bit during development, and it failed *silently* — the affected patterns
+reported "no matches" rather than an error. The hunt now separates ripgrep's
+exit 1 (genuinely no match) from exit 2 (bad pattern) and prints:
+
+```
+### /(ssid|wifi)[\"':= ]{1,4}.../
+  [!] INVALID PATTERN - not searched:
+      regex parse error: unrecognized escape sequence
+```
+
+If you ever see that, the pattern was **skipped entirely** — fix it and re-run.
+No other lookaround/backreference constructs are available either; Rust regex
+has no `(?=...)` or `\1`.
+
+### What the defaults cover
+
+Flag braces (`flag{}`, `FLAG{}`, `CTF{}`, plus a generic `WORD{...}`), PEM
+private keys and certificates, credential-ish assignments
+(`password`/`token`/`api_key`/`secret`/`auth`), WiFi `ssid`/`psk`, URLs, long
+base64 blobs, JWTs, MAC addresses, and 32–64 char hex (hashes and keys).
+
+### When the hunt comes back empty
+
+1. **Lower the string threshold.** The default is 6 characters, which misses
+   short tokens. From the analysis shell (`[22]`):
+   ```bash
+   MINLEN=4 fw-hunt.sh
+   ```
+2. **Check `reports/strings.txt` by hand.** The pattern list is not a
+   substitute for reading; a flag stored without a recognisable wrapper will
+   never match a generic pattern.
+3. **Look at NVS separately** (`reports/nvs-*.txt`), including the
+   erased-but-readable entries — those are stale values still on flash.
+4. **Consider that it is assembled at runtime.** If nothing is stored as a
+   plain string, no pattern will find it; that is the point at which
+   disassembly (phase 2) or driving the badge's own UI while capturing the
+   console (`[8]`) becomes the cheaper path.
+
+---
+
 ## Safety
 
 - No menu item writes to the badge. There is no write-flash, erase-flash or
@@ -148,11 +233,11 @@ own tools — see [docs/decisions.md](docs/decisions.md#validation).
 
 ## Documentation
 
-| Document | Contents |
-|---|---|
-| [docs/playbook.md](docs/playbook.md) | The order to actually do things in, with decision points |
-| [docs/usb-passthrough.md](docs/usb-passthrough.md) | How the badge reaches a container, and what breaks |
-| [docs/architecture.md](docs/architecture.md) | Why it is built this way |
-| [docs/decisions.md](docs/decisions.md) | Decision log, including validation evidence |
-| [docs/troubleshooting.md](docs/troubleshooting.md) | Symptom-to-fix table |
-| [docs/roadmap.md](docs/roadmap.md) | Phase 2: Ghidra, JTAG, wireless |
+| Document                                           | Contents                                                 |
+| -------------------------------------------------- | -------------------------------------------------------- |
+| [docs/playbook.md](docs/playbook.md)               | The order to actually do things in, with decision points |
+| [docs/usb-passthrough.md](docs/usb-passthrough.md) | How the badge reaches a container, and what breaks       |
+| [docs/architecture.md](docs/architecture.md)       | Why it is built this way                                 |
+| [docs/decisions.md](docs/decisions.md)             | Decision log, including validation evidence              |
+| [docs/troubleshooting.md](docs/troubleshooting.md) | Symptom-to-fix table                                     |
+| [docs/roadmap.md](docs/roadmap.md)                 | Phase 2: Ghidra, JTAG, wireless                          |

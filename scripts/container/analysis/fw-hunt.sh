@@ -73,7 +73,9 @@ log "$TOTAL strings extracted -> reports/strings.txt"
   echo "HUNT  run $RUN_ID   ($TOTAL strings searched)"
   hr
   while IFS= read -r pat; do
-    [ -z "$pat" ] && continue
+    # Blank lines and '#' comments are skipped so a hand-written patterns.txt
+    # can be annotated - useful when you come back to it hours later.
+    case "$pat" in ''|'#'*) continue ;; esac
     echo
     echo "### /$pat/"
     # rg exits 1 for "no match" (normal) and 2 for a bad pattern. Those must
