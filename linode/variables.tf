@@ -1,9 +1,8 @@
 variable "linode_token" {
-  description = "Linode API token. Prefer: export TF_VAR_linode_token=... (or LINODE_TOKEN)."
+  description = "Linode API token. Set in terraform.tfvars (gitignored); never commit it."
   type        = string
   sensitive   = true
-  # Fall back to the LINODE_TOKEN env var if TF_VAR_linode_token is unset.
-  default = null
+  default     = null
 }
 
 variable "gpu_type" {

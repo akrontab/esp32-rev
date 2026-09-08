@@ -1,11 +1,13 @@
-# Copy to terraform.tfvars (gitignored) and adjust, OR set these via env:
-#   export TF_VAR_linode_token=...     (preferred for the token - keep it out of files)
+# Copy to  terraform.tfvars  (gitignored) and fill in your token. Terraform
+# auto-loads terraform.tfvars, so `terraform plan` picks these up with no flags.
 #
 # Terraform GENERATES the SSH keypair for you (linode/id_esp32crack), so you do
-# not need to supply a key. Everything below has a sensible default; the only
-# thing you really must get right is a GPU-capable region and a valid plan id.
+# not need to supply a key. The only value you must set is the token; the rest
+# have sensible defaults - but check the region offers GPU plans and the plan
+# id is valid for your account.
 
-# linode_token = "paste-only-if-not-using-the-env-var"
+# REQUIRED. https://cloud.linode.com/profile/tokens (Linodes + Firewalls R/W).
+linode_token = "PASTE_YOUR_TOKEN_HERE"
 
 # Verify the exact GPU plan id for your account:
 #   linode-cli linodes types --json | jq -r '.[].id' | grep gpu

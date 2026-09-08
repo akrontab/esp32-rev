@@ -71,11 +71,12 @@ account or spends money.
 
 ### One-time
 
-- A Linode API token: `export TF_VAR_linode_token=...`
-- `cd linode && terraform init`
-- `cp terraform.tfvars.example terraform.tfvars` and set a GPU-capable region
-  and, ideally, `allowed_ssh_cidr` to your IP/32. Verify the plan id:
-  `linode-cli linodes types --json | jq -r '.[].id' | grep gpu`
+- `cd linode && cp terraform.tfvars.example terraform.tfvars`, then set your
+  API token in it (`linode_token = "..."`; the file is gitignored). Also set a
+  GPU-capable region and, ideally, `allowed_ssh_cidr` to your IP/32. Verify the
+  plan id: `linode-cli linodes types --json | jq -r '.[].id' | grep gpu`
+- `terraform init`, then `terraform plan` to validate against the API for free
+  before any `apply`. Full flow: [../linode/README.md](../linode/README.md).
 
 ### Each run
 
