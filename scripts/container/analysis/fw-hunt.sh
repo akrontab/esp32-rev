@@ -2,8 +2,14 @@
 # Hunt for the things that win challenges: flags, credentials, keys, URLs.
 #
 # Runs over the raw dump, every carved partition and every extracted file.
-# Edit /work/patterns.txt to add challenge-specific patterns; if that file
-# exists it is used instead of the built-in list.
+#
+# Patterns come from two places and are ADDITIVE by default:
+#   1. workspace/<target>/patterns.txt   - yours, searched first
+#   2. the built-in list below           - generic credential/key/flag shapes
+# Adding the event's flag format should never cost you the generic patterns,
+# so a custom file extends the defaults rather than replacing them. Put
+# '#!replace' on a line of patterns.txt when you deliberately want a narrow
+# search with the defaults switched off.
 
 source /opt/re/lib/common.sh
 init_workspace
@@ -14,7 +20,7 @@ MINLEN="${MINLEN:-6}"
 
 # Note: these are Rust-regex (ripgrep) syntax, which rejects pointless escapes
 # such as \" with a parse error rather than ignoring them. Quote characters go
-# into character classes bare.
+# into character classes bare. There is no lookaround and no backreference.
 DEFAULT_PATTERNS='
 flag\{[^}]{0,120}\}
 FLAG\{[^}]{0,120}\}
@@ -31,13 +37,59 @@ CTF\{[^}]{0,120}\}
 [0-9a-f]{32,64}
 '
 
-PAT_FILE="$WORK/patterns.txt"
-if [ -f "$PAT_FILE" ]; then
-  log "Using custom patterns from patterns.txt"
-else
-  PAT_FILE="$(mktemp)"
-  echo "$DEFAULT_PATTERNS" | grep -v '^[[:space:]]*$' > "$PAT_FILE"
+# Check the tools up front. The per-file calls below redirect stderr away to
+# hide binary-file noise, which would otherwise also hide a missing tool.
+for tool in strings rg; do
+  command -v "$tool" >/dev/null 2>&1 || die "'$tool' is missing from this image - rebuild it."
+done
+
+ERRFILE="$(mktemp)"
+CUSTOM_CLEAN="$(mktemp)"
+DEFAULT_CLEAN="$(mktemp)"
+trap 'rm -f "$ERRFILE" "$CUSTOM_CLEAN" "$DEFAULT_CLEAN"' EXIT
+
+# --- assemble the pattern set ----------------------------------------------
+
+strip_comments() { grep -v -E '^[[:space:]]*(#|$)' "$1" || true; }
+
+CUSTOM_FILE="$WORK/patterns.txt"
+MODE="append"
+N_CUSTOM=0
+
+if [ -f "$CUSTOM_FILE" ]; then
+  strip_comments "$CUSTOM_FILE" > "$CUSTOM_CLEAN"
+  N_CUSTOM="$(grep -c . "$CUSTOM_CLEAN" || true)"
+  # The directive is itself a comment, so it never reaches the pattern list.
+  if grep -q -E '^[[:space:]]*#!replace' "$CUSTOM_FILE"; then
+    MODE="replace"
+  fi
 fi
+
+echo "$DEFAULT_PATTERNS" | grep -v -E '^[[:space:]]*$' > "$DEFAULT_CLEAN"
+if [ "$MODE" = "replace" ]; then
+  : > "$DEFAULT_CLEAN"
+elif [ "$N_CUSTOM" -gt 0 ]; then
+  # Drop any default the custom file already states verbatim, so copying the
+  # defaults across does not produce duplicate sections.
+  grep -v -x -F -f "$CUSTOM_CLEAN" "$DEFAULT_CLEAN" > "$DEFAULT_CLEAN.tmp" 2>/dev/null || true
+  mv "$DEFAULT_CLEAN.tmp" "$DEFAULT_CLEAN" 2>/dev/null || true
+fi
+N_DEFAULT="$(grep -c . "$DEFAULT_CLEAN" || true)"
+
+if [ "$N_CUSTOM" -gt 0 ]; then
+  if [ "$MODE" = "replace" ]; then
+    log "patterns.txt: $N_CUSTOM custom patterns, defaults DISABLED (#!replace)"
+  else
+    log "patterns.txt: $N_CUSTOM custom patterns + $N_DEFAULT defaults"
+  fi
+else
+  log "using $N_DEFAULT built-in patterns (add workspace/patterns.txt to extend)"
+fi
+
+# --- extract strings --------------------------------------------------------
+
+log "Extracting strings (min length $MINLEN)"
+: > "$STRINGS_OUT"
 
 # Search the raw dump plus anything already carved or extracted. Raw flash is
 # searched too, because a string may live in a region no partition claims.
@@ -47,40 +99,29 @@ SEARCH_PATHS=()
 [ -d "$DIR_EXTRACT" ] && SEARCH_PATHS+=("$DIR_EXTRACT")
 [ ${#SEARCH_PATHS[@]} -gt 0 ] || die "Nothing to search - acquire and split a dump first."
 
-# Check the tools up front. The per-file calls below redirect stderr away to
-# hide binary-file noise, which would otherwise also hide a missing tool.
-for tool in strings rg; do
-  command -v "$tool" >/dev/null 2>&1 || die "'$tool' is missing from this image - rebuild it."
-done
-
-ERRFILE="$(mktemp)"
-trap 'rm -f "$ERRFILE"' EXIT
-
-log "Extracting strings (min length $MINLEN)"
-: > "$STRINGS_OUT"
 find "${SEARCH_PATHS[@]}" -type f -print0 2>/dev/null | while IFS= read -r -d '' f; do
   rel="${f#$WORK/}"
   # Both encodings: ESP firmware mixes 8-bit and UTF-16 literals.
-  strings -a -n "$MINLEN" "$f"        2>/dev/null | sed "s|^|$rel: |"
-  strings -a -n "$MINLEN" -e l "$f"   2>/dev/null | sed "s|^|$rel(utf16): |"
+  strings -a -n "$MINLEN" "$f"      2>/dev/null | sed "s|^|$rel: |"
+  strings -a -n "$MINLEN" -e l "$f" 2>/dev/null | sed "s|^|$rel(utf16): |"
 done >> "$STRINGS_OUT"
 
 TOTAL=$(wc -l < "$STRINGS_OUT")
 log "$TOTAL strings extracted -> reports/strings.txt"
 
-{
-  hr
-  echo "HUNT  run $RUN_ID   ($TOTAL strings searched)"
-  hr
+# --- search -----------------------------------------------------------------
+
+hunt_patterns() {
+  # $1 = origin label shown against each section, $2 = file of patterns
+  local origin="$1" file="$2" pat rc raw matches total
   while IFS= read -r pat; do
-    # Blank lines and '#' comments are skipped so a hand-written patterns.txt
-    # can be annotated - useful when you come back to it hours later.
     case "$pat" in ''|'#'*) continue ;; esac
     echo
-    echo "### /$pat/"
+    echo "### [$origin] /$pat/"
+
     # rg exits 1 for "no match" (normal) and 2 for a bad pattern. Those must
-    # not look alike: a malformed custom pattern silently reporting "nothing
-    # here" is how you miss the flag.
+    # not look alike: a malformed pattern silently reporting "nothing here" is
+    # how you miss the flag.
     rc=0
     raw="$(rg --no-line-number --no-heading -o -N -e "$pat" "$STRINGS_OUT" 2>"$ERRFILE")" || rc=$?
     if [ "$rc" -ge 2 ]; then
@@ -96,7 +137,26 @@ log "$TOTAL strings extracted -> reports/strings.txt"
     else
       echo "  (no matches)"
     fi
-  done < "$PAT_FILE"
+  done < "$file"
+}
+
+{
+  hr
+  echo "HUNT  run $RUN_ID   ($TOTAL strings searched)"
+  if [ "$N_CUSTOM" -gt 0 ]; then
+    echo "patterns: $N_CUSTOM custom + $N_DEFAULT default (mode: $MODE)"
+  else
+    echo "patterns: $N_DEFAULT default"
+  fi
+  hr
+
+  # Custom patterns first - they are the ones you came here to check.
+  if [ "$N_CUSTOM" -gt 0 ]; then
+    hunt_patterns custom "$CUSTOM_CLEAN"
+  fi
+  if [ "$N_DEFAULT" -gt 0 ]; then
+    hunt_patterns default "$DEFAULT_CLEAN"
+  fi
 
   echo
   hr
@@ -111,7 +171,7 @@ log "$TOTAL strings extracted -> reports/strings.txt"
   fi
 } 2>&1 | tee "$REPORT"
 
-record "hunt" "strings=$TOTAL"
+record "hunt" "strings=$TOTAL custom=$N_CUSTOM default=$N_DEFAULT mode=$MODE"
 register_artifact "$REPORT"
 register_artifact "$STRINGS_OUT"
 ok "Hunt complete -> reports/hunt.txt"

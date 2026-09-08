@@ -54,7 +54,8 @@ print([(f.name, f.size) for f in r.files])"
 
 - Lower the threshold: `MINLEN=4` (set it in the analysis shell).
 - Add the challenge's actual flag format to `workspace/<target>/patterns.txt`,
-  one ripgrep regex per line, then re-run `[17]`.
+  one ripgrep regex per line, then re-run `[17]`. These extend the built-in
+  patterns rather than replacing them.
 - Check `reports/strings.txt` directly — the pattern list is a starting point,
   not a substitute for reading.
 - If a pattern is malformed the hunt now says `INVALID PATTERN` rather than

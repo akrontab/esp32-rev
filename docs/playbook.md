@@ -131,7 +131,10 @@ When the easy paths are exhausted:
 
 - **Custom patterns.** Drop a `patterns.txt` into the target workspace (one
   ripgrep regex per line) and re-run `[17]`. Use this the moment you learn the
-  challenge's flag format.
+  challenge's flag format. Your patterns are searched *in addition* to the
+  built-in ones, so you never lose the credential and key patterns by adding
+  your own; `#!replace` in the file switches the defaults off when you want a
+  narrow search.
 - **Lower the string threshold.** `MINLEN=4` finds short tokens the default
   misses.
 - **Read the boot log again**, this time driving the badge's UI, buttons or

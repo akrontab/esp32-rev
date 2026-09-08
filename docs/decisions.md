@@ -145,6 +145,25 @@ warning git printed on the very first `git add`.
 
 ---
 
+## D12 — `patterns.txt` extends the built-in hunt patterns
+
+**Decision.** A custom `workspace/<target>/patterns.txt` is **additive**: it is
+searched first, then the built-in patterns. `#!replace` on a line of the file
+disables the defaults for a deliberately narrow search.
+
+**Why.** The first implementation replaced the defaults, which meant adding
+the event's flag format silently dropped the credential, key, JWT and
+certificate patterns — exactly when you least want to lose them. That the
+README needed a warning block about it was the signal the default was wrong;
+the safe behaviour should be the one you get by not thinking about it. Running
+a dozen extra regexes over a strings file costs milliseconds.
+
+Defaults duplicated verbatim in the custom file are dropped, so copying lines
+out of the built-in list does not produce duplicate report sections. Sections
+are tagged `[custom]` / `[default]` so the origin of a hit is never ambiguous.
+
+---
+
 ## Validation
 
 The format parsers were checked against ground truth from Espressif's own

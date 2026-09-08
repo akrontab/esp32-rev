@@ -153,6 +153,7 @@ the bottom that pulls out flag-shaped strings. Read that first.
 
 Create `workspace/<target>/patterns.txt`, one regex per line, then re-run
 `[17]`. No rebuild needed — the file is read from the mounted workspace.
+Blank lines and `#` comments are ignored.
 
 ```
 # workspace/defcon-badge/patterns.txt
@@ -160,13 +161,36 @@ DC32\{[^}]{0,120}\}
 sk_live_[A-Za-z0-9]{16,}
 ```
 
-> **This file *replaces* the built-in patterns, it does not add to them.**
-> If you want the defaults too, copy them out of `DEFAULT_PATTERNS` at the top
-> of `scripts/container/analysis/fw-hunt.sh` into your file. Forgetting this is
-> the easy way to accidentally narrow your search to one pattern.
+**Your patterns are added to the built-in ones, not swapped for them.** You
+keep the credential, key and JWT patterns for free, and your own are searched
+first and tagged `[custom]` in the report:
 
-To change the defaults permanently instead, edit that `DEFAULT_PATTERNS` block
-and rebuild the analysis image (`[2]`).
+```
+patterns: 2 custom + 12 default (mode: append)
+
+### [custom] /DC32\{[^}]{0,120}\}/
+### [default] /-----BEGIN [A-Z ]*PRIVATE KEY-----/
+```
+
+A default that your file already states verbatim is dropped, so copying lines
+out of the built-in list never gives you duplicate sections.
+
+### Narrowing to just your patterns
+
+When you know exactly what you are looking for and the generic patterns are
+only noise, put `#!replace` on a line of `patterns.txt` to switch the defaults
+off:
+
+```
+#!replace
+DC32\{[^}]{0,120}\}
+```
+
+The hunt then reports `defaults DISABLED (#!replace)` so the narrower search
+is never a silent surprise.
+
+To change the built-in list permanently, edit `DEFAULT_PATTERNS` at the top of
+`scripts/container/analysis/fw-hunt.sh` and rebuild the analysis image (`[2]`).
 
 ### Regex flavour — the gotcha
 
