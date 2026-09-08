@@ -6,6 +6,11 @@
 #   esp32-re/analysis - gets the workspace only, never a device, so analysis
 #                       can never accidentally write to the badge
 
+# Note: there is no BLE image. Bluetooth cannot be containerised on Docker
+# Desktop / WSL2 - AF_BLUETOOTH sockets fail with EAFNOSUPPORT even in a
+# privileged --net=host container, because the WSL2 VM kernel does not expose
+# the Bluetooth socket family to containers. BLE runs host-side in the venv
+# via bleak's native Windows backend instead. See docs/ble.md.
 $script:Images = @{
     esptool  = 'esp32-re/esptool:latest'
     analysis = 'esp32-re/analysis:latest'

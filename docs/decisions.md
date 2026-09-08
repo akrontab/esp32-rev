@@ -164,6 +164,36 @@ are tagged `[custom]` / `[default]` so the origin of a hit is never ambiguous.
 
 ---
 
+## D13 — BLE tooling runs host-side, not in a container
+
+**Decision.** BLE scan / GATT-dump / notify run in the host venv via `bleak`'s
+Windows backend. There is no BLE container.
+
+**Why.** Bluetooth cannot be containerised on Docker Desktop / WSL2, and this
+was established empirically, not assumed:
+
+- An Intel adapter passed into the VM with usbipd attaches but yields no `hci`
+  interface — the minimal VM has no `/lib/firmware/intel` and Intel radios
+  upload firmware at init.
+- More fundamentally, `socket(AF_BLUETOOTH, …)` fails with `EAFNOSUPPORT`
+  **even `--privileged --net=host`** with `bluetooth.ko` loaded, so
+  `bluetoothd` cannot start at all. The WSL2 VM kernel does not expose the
+  Bluetooth socket family to containers.
+
+The container image, `bluetoothd` entrypoint and usbipd BT-passthrough code
+that were written first are all removed. `bleak` on Windows uses the adapter
+the OS already drives — no usbipd, no firmware, no radio passthrough, and it
+does not take Bluetooth from Windows. The venv is the sanctioned host-side
+exception (see [D8](#d8--a-project-local-host-venv)), so this fits the model
+rather than breaking the no-host-tooling rule. Full detail in
+[ble.md](ble.md).
+
+**Validated on the real badge:** scan found `BADGE BLE`, and the GATT dump read
+its custom-service characteristics live, including the "Crack the Hash"
+challenge — through the control-plane menu, into hashed workspace files.
+
+---
+
 ## Validation
 
 The format parsers were checked against ground truth from Espressif's own

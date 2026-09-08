@@ -122,6 +122,7 @@ function Invoke-BuildImages {
     Write-Host "  2) analysis  - offline carving and analysis"
     Write-Host "  3) both"
     Write-Host "  4) ghidra    - disassembly (phase 2; large download)"
+    Write-Host "  (BLE needs no image - it runs host-side in the venv; see docs/ble.md)"
     $pick = Read-Host "Which"
     $noCache = Confirm-Action "Build without cache?"
     switch ($pick) {
@@ -134,6 +135,41 @@ function Invoke-BuildImages {
         '4' { Build-Image -Name ghidra   -NoCache:$noCache | Out-Null }
         default { Write-Warn "Nothing selected." }
     }
+}
+
+function Invoke-HostBle {
+    <#
+      Run a BLE tool host-side in the venv, against the Windows Bluetooth
+      stack via bleak. Deliberately NOT containerised: Bluetooth does not work
+      in Docker Desktop containers (see docs/ble.md). The target workspace is
+      passed as WORK so the tools write into workspace\<target>\ as usual.
+    #>
+    param([Parameter(Mandatory)][string]$Script, [string[]]$Arguments = @())
+    if (-not (Assert-Target)) { return }
+    $v = Get-VenvPaths
+    if (-not (Test-Path $v.Python)) {
+        Write-Warn "Host venv not available - run [V] first (BLE needs bleak in the venv)."
+        return
+    }
+    Enable-Venv | Out-Null
+    $prev = $env:WORK
+    $env:WORK = (Get-TargetPath)
+    try {
+        & $v.Python (Join-Path $script:RepoRoot "scripts\host\ble\$Script") @Arguments
+    } finally {
+        $env:WORK = $prev
+    }
+}
+
+function Invoke-BleScan {
+    $secs = Read-Host "Scan seconds [10]"; if (-not $secs) { $secs = '10' }
+    Invoke-HostBle -Script 'ble-scan.py' -Arguments @('--seconds', $secs)
+}
+
+function Invoke-BleDump {
+    $addr = Read-Host "Badge BD address (from scan, e.g. BC:E1:00:07:0D:03)"
+    if (-not $addr) { Write-Warn "Address required."; return }
+    Invoke-HostBle -Script 'ble-dump.py' -Arguments @($addr)
 }
 
 function Invoke-DeviceManager {
@@ -317,6 +353,9 @@ function Show-Menu {
     Write-Host "   12) Full analysis pipeline           13) Triage a dump"
     Write-Host "   14) Split partitions                 15) Extract filesystems"
     Write-Host "   16) Dump NVS                         17) Hunt flags / secrets"
+    Write-Host "  BLUETOOTH  (BLE challenges - host-side via venv)" -ForegroundColor Yellow
+    Write-Host "   25) Scan for BLE devices             26) Dump badge GATT + read all"
+    Write-Host "   27) Notifications / write"
     Write-Host "  WORKSPACE" -ForegroundColor Yellow
     Write-Host "   18) View reports                     19) Verify artefact hashes"
     Write-Host "   20) Workspace summary"
@@ -353,6 +392,13 @@ function Invoke-MenuChoice {
         '20' { Invoke-HostPython -Script 'summary.py' -Arguments @((Get-WorkspaceRoot)) }
         '21' { if (Assert-Target) { Enter-ContainerShell -Image esptool -WithDevice } }
         '22' { if (Assert-Target) { Enter-ContainerShell -Image analysis } }
+        '25' { Invoke-BleScan }
+        '26' { Invoke-BleDump }
+        '27' {
+            $a = Read-Host "Badge BD address"
+            $c = Read-Host "Notify characteristic UUID"
+            if ($a -and $c) { Invoke-HostBle -Script 'ble-notify.py' -Arguments @($a, '--notify', $c) }
+        }
         '23' { Show-Docs }
         default { Write-Warn "Unknown choice '$Choice'" }
     }
@@ -389,7 +435,11 @@ if (-not (Test-ImageExists 'esptool') -or -not (Test-ImageExists 'analysis')) {
 try {
     while ($true) {
         Show-Menu
-        $choice = (Read-Host "Choice").Trim().ToLower()
+        $raw = Read-Host "Choice"
+        # Read-Host returns $null at EOF (piped/redirected input running out);
+        # treat that as quit rather than crashing on a null method call.
+        if ($null -eq $raw) { break }
+        $choice = $raw.Trim().ToLower()
         if ($choice -in 'q', 'quit', 'exit') { break }
         if (-not $choice) { continue }
         try {

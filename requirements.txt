@@ -2,3 +2,5 @@
 # Pinned so a rebuilt venv mid-CTF behaves identically to the one you started with.
 rich==15.0.0        # tables and colour for host-side status and report output
 pyserial==3.5       # COM-port enumeration when diagnosing a failed USB/IP attach
+bleak==0.22.3       # BLE central via the native Windows stack - Bluetooth cannot
+                    # be containerised on Docker Desktop, so this runs host-side

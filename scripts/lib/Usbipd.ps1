@@ -219,6 +219,12 @@ function Disconnect-BadgeDevice {
     Write-Ok "Detached. The device is back on Windows (as a COM port)."
 }
 
+# BLE deliberately does NOT use usbipd. Bluetooth cannot be containerised on
+# Docker Desktop / WSL2 (AF_BLUETOOTH is unavailable in containers, and Intel
+# adapters need firmware the VM lacks), so passing the radio into the VM buys
+# nothing. Instead the host venv drives the Windows Bluetooth stack directly
+# via bleak - see Invoke-HostBle in badge.ps1 and docs/ble.md.
+
 function Get-DeviceStatusLine {
     $s = $script:State
     if (-not $s.DevicePath) { return 'no device attached' }

@@ -97,8 +97,8 @@ workspace/<target>/
   meta/       target.json, efuse_summary.txt, partitions.json, artifacts.sha256
   dumps/      flash_full.bin and any region dumps
   parts/      one .bin per partition, carved from the dump
-  extract/    files recovered from SPIFFS / LittleFS / FAT, NVS blobs
-  reports/    triage, partitions, nvs-*, hunt, strings
+  extract/    recovered files: SPIFFS/LittleFS/FAT, NVS blobs, ble/ characteristics
+  reports/    triage, partitions, nvs-*, hunt, strings, ble-scan, ble-gatt
   logs/       serial captures and actions.jsonl (every action, timestamped)
   NOTES.md    your findings
 ```
@@ -260,6 +260,7 @@ base64 blobs, JWTs, MAC addresses, and 32–64 char hex (hashes and keys).
 | Document                                           | Contents                                                 |
 | -------------------------------------------------- | -------------------------------------------------------- |
 | [docs/background.md](docs/background.md)         | **New to ESP32 RE? Start here.** How to read a dump: eFuses, partitions, app images, NVS |
+| [docs/ble.md](docs/ble.md)                       | Bluetooth LE challenges: scan, dump GATT, why BLE runs host-side |
 | [docs/playbook.md](docs/playbook.md)               | The order to actually do things in, with decision points |
 | [docs/usb-passthrough.md](docs/usb-passthrough.md) | How the badge reaches a container, and what breaks       |
 | [docs/architecture.md](docs/architecture.md)       | Why it is built this way                                 |

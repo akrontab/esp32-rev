@@ -128,6 +128,24 @@ Read `reports/hunt.txt` first, then `reports/triage.txt`.
 
 ---
 
+## Phase 4b — Bluetooth (BLE) challenges
+
+If the badge advertises BLE (the 2025 one did, and 2026 is expected to),
+its challenges are usually readable straight off its GATT characteristics.
+This runs host-side, not in a container (Bluetooth cannot be containerised
+on Docker Desktop - see [ble.md](ble.md)):
+
+1. `[25]` scan - find the badge, note its BD address.
+2. `[26]` dump its GATT and read every characteristic into the workspace.
+   On the 2025 badge this surfaced the entire cipher/hash challenge set.
+3. `[27]` subscribe to notifications (and optionally write a trigger) for
+   challenges that respond dynamically rather than on a plain read.
+
+Decode hints for rot13/base64/base32 are printed inline, since those were
+the 2025 badge's cipher transforms.
+
+---
+
 ## Phase 5 — go deeper
 
 When the easy paths are exhausted:
