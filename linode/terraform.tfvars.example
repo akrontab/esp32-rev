@@ -1,0 +1,24 @@
+# Copy to terraform.tfvars (gitignored) and adjust, OR set these via env:
+#   export TF_VAR_linode_token=...     (preferred for the token - keep it out of files)
+#
+# Terraform GENERATES the SSH keypair for you (linode/id_esp32crack), so you do
+# not need to supply a key. Everything below has a sensible default; the only
+# thing you really must get right is a GPU-capable region and a valid plan id.
+
+# linode_token = "paste-only-if-not-using-the-env-var"
+
+# Verify the exact GPU plan id for your account:
+#   linode-cli linodes types --json | jq -r '.[].id' | grep gpu
+# gpu_type = "g2-gpu-rtx4000a1-s"
+
+# Must be a region that offers GPU plans:  linode-cli regions list
+# region = "us-iad"
+
+# Lock SSH to your own IP - find it with: curl -s ifconfig.me
+# allowed_ssh_cidr = "203.0.113.7/32"
+
+# Pull the multi-GB weakpass list on boot (adds several minutes to provisioning)
+# fetch_weakpass = false
+
+# Extra keys to authorise IN ADDITION to the generated one (usually leave empty)
+# authorized_keys = ["ssh-ed25519 AAAA... you@host"]

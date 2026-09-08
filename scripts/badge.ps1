@@ -121,7 +121,8 @@ function Invoke-BuildImages {
     Write-Host "  1) esptool   - serial acquisition (small, needed for hardware)"
     Write-Host "  2) analysis  - offline carving and analysis"
     Write-Host "  3) both"
-    Write-Host "  4) ghidra    - disassembly (phase 2; large download)"
+    Write-Host "  4) hashcat   - local GPU hash cracking (CUDA base + rockyou; large)"
+    Write-Host "  5) ghidra    - disassembly (phase 2; large download)"
     Write-Host "  (BLE needs no image - it runs host-side in the venv; see docs/ble.md)"
     $pick = Read-Host "Which"
     $noCache = Confirm-Action "Build without cache?"
@@ -132,7 +133,14 @@ function Invoke-BuildImages {
             Build-Image -Name esptool  -NoCache:$noCache | Out-Null
             Build-Image -Name analysis -NoCache:$noCache | Out-Null
         }
-        '4' { Build-Image -Name ghidra   -NoCache:$noCache | Out-Null }
+        '4' {
+            if (-not (Test-GpuInDocker)) {
+                Write-Warn "Docker cannot see the NVIDIA GPU (--gpus all failed)."
+                Write-Info "The image will still build, but cracking needs GPU passthrough working."
+            }
+            Build-Image -Name hashcat -NoCache:$noCache | Out-Null
+        }
+        '5' { Build-Image -Name ghidra   -NoCache:$noCache | Out-Null }
         default { Write-Warn "Nothing selected." }
     }
 }
@@ -161,9 +169,25 @@ function Invoke-HostBle {
     }
 }
 
-function Invoke-BleScan {
-    $secs = Read-Host "Scan seconds [10]"; if (-not $secs) { $secs = '10' }
-    Invoke-HostBle -Script 'ble-scan.py' -Arguments @('--seconds', $secs)
+function Invoke-HashId {
+    if (-not (Assert-Target)) { return }
+    Write-Info "Scanning the workspace for hash-shaped strings (strings, NVS, BLE, extracted files)."
+    Invoke-CrackContainer -Command @('hash-id.sh', '--scan')
+}
+
+function Invoke-CrackLocal {
+    if (-not (Assert-Target)) { return }
+    Write-Info "Hashes must all be the SAME type in one file. Use [hash-id] first if unsure."
+    Write-Info "Put them in workspace\$($script:State.Target)\reports\ (one per line)."
+    $file = Read-Host "Hash file name under reports\ [badge-hashes.txt]"
+    if (-not $file) { $file = 'badge-hashes.txt' }
+    $mode = Read-Host "hashcat mode (-m): SHA-1=100, MD5=0, NTLM=1000, SHA-256=1400, bcrypt=3200"
+    if (-not $mode) { Write-Warn "A mode is required (see hash-id output)."; return }
+    $custom = Confirm-Action "Also try a wordlist derived from this badge's own strings?" -Default
+    $crackArgs = @('crack.sh', '-m', $mode, "/work/reports/$file")
+    if ($custom) { $crackArgs += '--custom' }
+    Write-Info "Local GPU pass. If nothing cracks in ~30 min, escalate to the Linode rig (docs/hash-cracking.md)."
+    Invoke-CrackContainer -Command $crackArgs
 }
 
 function Invoke-BleDump {
@@ -356,6 +380,8 @@ function Show-Menu {
     Write-Host "  BLUETOOTH  (BLE challenges - host-side via venv)" -ForegroundColor Yellow
     Write-Host "   25) Scan for BLE devices             26) Dump badge GATT + read all"
     Write-Host "   27) Notifications / write"
+    Write-Host "  HASH CRACKING  (local GPU first; Linode rig is manual escalation)" -ForegroundColor Yellow
+    Write-Host "   29) Identify hashes in workspace     30) Crack locally (GPU)"
     Write-Host "  WORKSPACE" -ForegroundColor Yellow
     Write-Host "   18) View reports                     19) Verify artefact hashes"
     Write-Host "   20) Workspace summary"
@@ -394,6 +420,8 @@ function Invoke-MenuChoice {
         '22' { if (Assert-Target) { Enter-ContainerShell -Image analysis } }
         '25' { Invoke-BleScan }
         '26' { Invoke-BleDump }
+        '29' { Invoke-HashId }
+        '30' { Invoke-CrackLocal }
         '27' {
             $a = Read-Host "Badge BD address"
             $c = Read-Host "Notify characteristic UUID"

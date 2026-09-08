@@ -146,6 +146,16 @@ the 2025 badge's cipher transforms.
 
 ---
 
+## Phase 4c — crack any hashes found
+
+Badge challenges often end in a hash (the 2025 badge served two SHA-1s over
+BLE). Identify with `[29]`, then crack locally on the GPU with `[30]` -
+rockyou+rules cracks common cases in seconds. Only if nothing lands in
+~30 min do you spin up the Linode rig by hand (terraform). Full workflow:
+[hash-cracking.md](hash-cracking.md).
+
+---
+
 ## Phase 5 — go deeper
 
 When the easy paths are exhausted:

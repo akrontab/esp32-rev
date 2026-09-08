@@ -14,6 +14,7 @@
 $script:Images = @{
     esptool  = 'esp32-re/esptool:latest'
     analysis = 'esp32-re/analysis:latest'
+    hashcat  = 'esp32-re/hashcat:latest'
     ghidra   = 'esp32-re/ghidra:latest'
 }
 
@@ -36,7 +37,7 @@ function Test-ImageExists {
 }
 
 function Get-ImageStatus {
-    $rows = foreach ($n in 'esptool', 'analysis', 'ghidra') {
+    $rows = foreach ($n in 'esptool', 'analysis', 'hashcat', 'ghidra') {
         $tag = $script:Images[$n]
         $info = docker images --format '{{.Size}}|{{.CreatedSince}}' $tag 2>$null | Select-Object -First 1
         if ($info) {
@@ -159,5 +160,59 @@ function Invoke-Container {
 function Enter-ContainerShell {
     param([Parameter(Mandatory)][string]$Image, [switch]$WithDevice)
     Write-Info "Workspace is mounted at /work. Tools are on PATH. 'exit' returns to the menu."
-    Invoke-Container -Image $Image -Command @('/bin/bash') -Interactive:$true -WithDevice:$WithDevice
+    if ($Image -eq 'hashcat') {
+        Invoke-CrackContainer -Command @('/bin/bash') -Interactive:$true
+    } else {
+        Invoke-Container -Image $Image -Command @('/bin/bash') -Interactive:$true -WithDevice:$WithDevice
+    }
+}
+
+function Test-GpuInDocker {
+    <# One-time check that Docker Desktop exposes the NVIDIA GPU to containers. #>
+    docker run --rm --gpus all nvidia/cuda:12.4.1-base-ubuntu22.04 nvidia-smi 2>$null | Out-Null
+    return ($LASTEXITCODE -eq 0)
+}
+
+function Invoke-CrackContainer {
+    <#
+      Run the hashcat image on the local GPU. Needs --gpus all AND
+      NVIDIA_DRIVER_CAPABILITIES=all - the CUDA backend (libnvrtc) is only
+      reachable with the full driver capability set, not the default subset.
+      Also mounts the gitignored wordlists/ dir so big lists are available
+      without rebuilding the image.
+    #>
+    param([Parameter(Mandatory)][string[]]$Command, [switch]$Interactive)
+    $script:LastContainerExit = 1
+
+    if (-not (Test-ImageExists 'hashcat')) {
+        Write-Warn "hashcat image is not built."
+        if (Confirm-Action "Build it now? (large - CUDA base + rockyou)" -Default) {
+            if (-not (Build-Image -Name hashcat)) { return }
+        } else { return }
+    }
+
+    $targetPath = Get-TargetPath
+    if (-not $targetPath) { Write-Err "No target selected."; return }
+    New-Item -ItemType Directory -Force -Path $targetPath | Out-Null
+
+    $runArgs = @('run', '--rm')
+    if ($Interactive) { $runArgs += '-it' } else { $runArgs += '-i' }
+    $runArgs += @(
+        '--gpus', 'all',
+        '-e', 'NVIDIA_DRIVER_CAPABILITIES=all',
+        '-v', "$(ConvertTo-DockerPath $targetPath):/work"
+    )
+    # Optional shared wordlists dir, mounted read-only if present.
+    $wl = Join-Path $script:RepoRoot 'wordlists'
+    if (Test-Path $wl) {
+        $runArgs += @('-v', "$(ConvertTo-DockerPath $wl):/opt/wordlists/extra:ro")
+    }
+    $runArgs += $script:Images['hashcat']
+    $runArgs += $Command
+
+    & docker @runArgs
+    $script:LastContainerExit = $LASTEXITCODE
+    if ($script:LastContainerExit -ne 0) {
+        Write-Warn "hashcat container exited with code $script:LastContainerExit"
+    }
 }

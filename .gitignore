@@ -21,3 +21,20 @@ __pycache__/
 Thumbs.db
 desktop.ini
 *.swp
+
+# Wordlists: rockyou + rules are baked into the hashcat image. Big lists
+# (SecLists, weakpass, crackstation) are fetched on demand into wordlists/ and
+# never committed - same policy as firmware dumps. Keep the fetch script + README.
+wordlists/*
+!wordlists/fetch-wordlists.sh
+!wordlists/README.md
+
+# Terraform state can contain secrets and the rig's IP; never commit it.
+linode/.terraform/
+linode/*.tfstate
+linode/*.tfstate.*
+linode/.terraform.lock.hcl
+linode/*.tfvars
+!linode/*.tfvars.example
+linode/id_esp32crack
+linode/id_esp32crack.pub

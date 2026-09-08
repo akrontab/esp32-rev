@@ -1,0 +1,55 @@
+#cloud-config
+# Provisions the cracking rig on first boot: NVIDIA driver + CUDA (hashcat's
+# CUDA backend needs libnvrtc), hashcat, and wordlists.
+#
+# NOTE: this is written carefully but has NOT been validated on a live Linode
+# GPU instance (that costs money and is your account). Treat the first boot as
+# a shakeout: `cloud-init status --wait` then check /var/log/cloud-init-output.log.
+# The driver step is the most likely thing to need adjustment for the exact
+# GPU/kernel Linode provisions.
+
+package_update: true
+package_upgrade: false
+
+packages:
+  - build-essential
+  - p7zip-full
+  - curl
+  - git
+  - tmux
+  - jq
+  - ubuntu-drivers-common
+  - nvidia-cuda-toolkit   # provides libnvrtc for hashcat's CUDA backend
+
+write_files:
+  - path: /root/crack.sh
+    permissions: "0755"
+    content: |
+      #!/usr/bin/env bash
+      # Rig-side cracking helper. Run inside tmux so a dropped SSH session does
+      # not kill a long run; hashcat --restore resumes if interrupted.
+      #   ./crack.sh -m <mode> <hashfile> [extra hashcat args...]
+      set -euo pipefail
+      MODE=""; HF=""
+      while [ $# -gt 0 ]; do case "$1" in -m) MODE="$2"; shift 2;; *) HF="$1"; shift;; esac; done
+      [ -n "$MODE" ] && [ -f "$HF" ] || { echo "usage: crack.sh -m <mode> <hashfile>"; exit 2; }
+      WL=/root/wordlists
+      echo "[*] straight rockyou"
+      hashcat -m "$MODE" -O -w 4 "$HF" "$WL/rockyou.txt" || true
+      echo "[*] rockyou + OneRule"
+      hashcat -m "$MODE" -O -w 4 "$HF" "$WL/rockyou.txt" -r "$WL/OneRuleToRuleThemAll.rule" || true
+      echo "[*] For deep brute-force use a mask, e.g. 8-char lower+digit:"
+      echo "    hashcat -m $MODE -O -w 4 $HF -a 3 '?l?l?l?l?l?l?l?l'"
+      echo "[*] cracked:"
+      hashcat -m "$MODE" "$HF" --show
+
+runcmd:
+  - [ bash, -lc, "ubuntu-drivers autoinstall || apt-get install -y nvidia-driver-535-server" ]
+  - [ bash, -lc, "modprobe nvidia || true" ]
+  - [ bash, -lc, "mkdir -p /root/wordlists /opt && cd /opt && curl -sSL -o hashcat.7z https://hashcat.net/files/hashcat-6.2.6.7z && 7z x -y hashcat.7z && ln -sf /opt/hashcat-6.2.6/hashcat.bin /usr/local/bin/hashcat" ]
+  - [ bash, -lc, "cd /root/wordlists && curl -sSL -o rockyou.txt https://github.com/brannondorsey/naive-hashcat/releases/download/data/rockyou.txt && curl -sSL -o OneRuleToRuleThemAll.rule https://raw.githubusercontent.com/NotSoSecure/password_cracking_rules/master/OneRuleToRuleThemAll.rule" ]
+  - [ bash, -lc, "if [ '${fetch_weakpass}' = 'true' ]; then cd /root/wordlists && curl -sSL -o weakpass_3a.7z https://download.weakpass.com/wordlists/1948/weakpass_3a.7z && 7z x -y weakpass_3a.7z || true; fi" ]
+  - [ bash, -lc, "nvidia-smi > /root/gpu-check.txt 2>&1 || echo 'nvidia-smi failed - driver may need a reboot' >> /root/gpu-check.txt" ]
+  - [ bash, -lc, "touch /root/READY" ]
+
+final_message: "esp32 crack rig ready after $UPTIME s. Check /root/gpu-check.txt and run /root/crack.sh"
