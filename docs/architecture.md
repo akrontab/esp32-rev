@@ -66,13 +66,13 @@ Shared Python parsers live in `/opt/re/lib` and are on both `PYTHONPATH` and
 
 The control plane passes these into every container:
 
-| Variable | Meaning |
-|---|---|
-| `WORK` | always `/work`, the mounted target workspace |
-| `TARGET` | target name, recorded in the action log |
-| `SERIAL_PORT` | device path; set only for the esptool image |
-| `BAUD` | flash read speed, with automatic fallback to 115200 |
-| `CHIP` | `auto`, or a pinned esptool chip id once known |
+| Variable      | Meaning                                             |
+| ------------- | --------------------------------------------------- |
+| `WORK`        | always `/work`, the mounted target workspace        |
+| `TARGET`      | target name, recorded in the action log             |
+| `SERIAL_PORT` | device path; set only for the esptool image         |
+| `BAUD`        | flash read speed, with automatic fallback to 115200 |
+| `CHIP`        | `auto`, or a pinned esptool chip id once known      |
 
 ## Host state
 

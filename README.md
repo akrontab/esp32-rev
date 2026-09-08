@@ -90,13 +90,13 @@ Three container images at two privilege levels, plus two host-side capabilities
 that **cannot** be containerised on Docker Desktop/WSL2 and so run in the venv
 against the Windows stack directly:
 
-| Capability | Runs in | Gets the hardware? |
-| --- | --- | --- |
-| `esp32-re/esptool` | container | yes (`--device` serial) — the only thing that talks to the badge |
-| `esp32-re/analysis` | container | **no** — offline carving/analysis, incl. WiFi capability recon |
-| `esp32-re/hashcat` | container | GPU (`--gpus all`) — local hash cracking |
-| BLE (scan/GATT) | **host venv** | Windows Bluetooth stack — [containers can't do BLE](docs/ble.md) |
-| WiFi scan | **host venv** | Windows WLAN service — same reason |
+| Capability          | Runs in       | Gets the hardware?                                               |
+| ------------------- | ------------- | ---------------------------------------------------------------- |
+| `esp32-re/esptool`  | container     | yes (`--device` serial) — the only thing that talks to the badge |
+| `esp32-re/analysis` | container     | **no** — offline carving/analysis, incl. WiFi capability recon   |
+| `esp32-re/hashcat`  | container     | GPU (`--gpus all`) — local hash cracking                         |
+| BLE (scan/GATT)     | **host venv** | Windows Bluetooth stack — [containers can't do BLE](docs/ble.md) |
+| WiFi scan           | **host venv** | Windows WLAN service — same reason                               |
 
 The container split is deliberate: analysis and cracking code can never reach
 the serial hardware. BLE and WiFi are host-side because AF_BLUETOOTH and
@@ -271,16 +271,16 @@ base64 blobs, JWTs, MAC addresses, and 32–64 char hex (hashes and keys).
 
 ## Documentation
 
-| Document                                           | Contents                                                 |
-| -------------------------------------------------- | -------------------------------------------------------- |
-| [docs/background.md](docs/background.md)         | **New to ESP32 RE? Start here.** How to read a dump: eFuses, partitions, app images, NVS |
-| [docs/hash-cracking.md](docs/hash-cracking.md)   | Cracking hashes: local GPU first, Linode rig as manual escalation |
-| [docs/ble.md](docs/ble.md)                       | Bluetooth LE challenges: scan, dump GATT, why BLE runs host-side |
-| [docs/wifi.md](docs/wifi.md)                     | WiFi capability recon: firmware analysis + host SoftAP scan |
-| [docs/ghidra.md](docs/ghidra.md)                 | Disassembly: headless decompilation + noVNC GUI (Xtensa/RISC-V) |
-| [docs/playbook.md](docs/playbook.md)               | The order to actually do things in, with decision points |
-| [docs/usb-passthrough.md](docs/usb-passthrough.md) | How the badge reaches a container, and what breaks       |
-| [docs/architecture.md](docs/architecture.md)       | Why it is built this way                                 |
-| [docs/decisions.md](docs/decisions.md)             | Decision log, including validation evidence              |
-| [docs/troubleshooting.md](docs/troubleshooting.md) | Symptom-to-fix table                                     |
-| [docs/roadmap.md](docs/roadmap.md)                 | What's built vs. deferred: Ghidra, JTAG, WiFi attacks    |
+| Document                                           | Contents                                                                                 |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| [docs/background.md](docs/background.md)           | **New to ESP32 RE? Start here.** How to read a dump: eFuses, partitions, app images, NVS |
+| [docs/hash-cracking.md](docs/hash-cracking.md)     | Cracking hashes: local GPU first, Linode rig as manual escalation                        |
+| [docs/ble.md](docs/ble.md)                         | Bluetooth LE challenges: scan, dump GATT, why BLE runs host-side                         |
+| [docs/wifi.md](docs/wifi.md)                       | WiFi capability recon: firmware analysis + host SoftAP scan                              |
+| [docs/ghidra.md](docs/ghidra.md)                   | Disassembly: headless decompilation + noVNC GUI (Xtensa/RISC-V)                          |
+| [docs/playbook.md](docs/playbook.md)               | The order to actually do things in, with decision points                                 |
+| [docs/usb-passthrough.md](docs/usb-passthrough.md) | How the badge reaches a container, and what breaks                                       |
+| [docs/architecture.md](docs/architecture.md)       | Why it is built this way                                                                 |
+| [docs/decisions.md](docs/decisions.md)             | Decision log, including validation evidence                                              |
+| [docs/troubleshooting.md](docs/troubleshooting.md) | Symptom-to-fix table                                                                     |
+| [docs/roadmap.md](docs/roadmap.md)                 | What's built vs. deferred: Ghidra, JTAG, WiFi attacks                                    |

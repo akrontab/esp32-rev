@@ -44,12 +44,12 @@ Runs the whole pipeline unattended and drops the results in the workspace:
    image header — the same ones `reports/triage.txt` prints.
 3. Ghidra auto-analyses, then **`ExportArtifacts`** writes plain files:
 
-   | File | Contents |
-   |---|---|
-   | `reports/ghidra/decompiled.c` | every function's decompiled C |
-   | `reports/ghidra/functions.txt` | address, name, size of each function |
-   | `reports/ghidra/symbols.txt` | the symbol table |
-   | `reports/ghidra/strings-ghidra.txt` | defined strings with addresses |
+   | File                                | Contents                             |
+   | ----------------------------------- | ------------------------------------ |
+   | `reports/ghidra/decompiled.c`       | every function's decompiled C        |
+   | `reports/ghidra/functions.txt`      | address, name, size of each function |
+   | `reports/ghidra/symbols.txt`        | the symbol table                     |
+   | `reports/ghidra/strings-ghidra.txt` | defined strings with addresses       |
 
 Because the output is plain text, you can `grep` the decompilation for a
 constant, a string address, or a suspicious operation without opening the GUI.

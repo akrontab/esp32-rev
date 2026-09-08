@@ -234,12 +234,12 @@ monitor-mode are attack, need dedicated hardware + Linux, and are deferred
 The format parsers were checked against ground truth from Espressif's own
 tooling rather than assumed correct.
 
-| Parser | Ground truth | Result |
-|---|---|---|
-| `espfmt` image parsing | A synthesised ESP32 image read back by `esptool image-info` | Entry point, segment table, flash mode/size/freq, checksum, validation hash and app descriptor all agree |
-| `espfmt` partition table | Hand-built table with MD5 entry | All five partitions and the MD5 recovered |
-| `nvsfmt` | Partition built by `esp-idf-nvs-partition-gen` from a CSV | Namespaces resolved; string, u8, u32, blob-data and blob-index entries all decoded correctly |
-| `spiffsfmt` | Image built by ESP-IDF's `spiffsgen.py` (v5.2.1) | All 4 files extracted **byte-identical**, including a 10 KiB multi-page file and a nested path |
+| Parser                   | Ground truth                                                | Result                                                                                                   |
+| ------------------------ | ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `espfmt` image parsing   | A synthesised ESP32 image read back by `esptool image-info` | Entry point, segment table, flash mode/size/freq, checksum, validation hash and app descriptor all agree |
+| `espfmt` partition table | Hand-built table with MD5 entry                             | All five partitions and the MD5 recovered                                                                |
+| `nvsfmt`                 | Partition built by `esp-idf-nvs-partition-gen` from a CSV   | Namespaces resolved; string, u8, u32, blob-data and blob-index entries all decoded correctly             |
+| `spiffsfmt`              | Image built by ESP-IDF's `spiffsgen.py` (v5.2.1)            | All 4 files extracted **byte-identical**, including a 10 KiB multi-page file and a nested path           |
 
 The whole analysis pipeline was then run end-to-end against a composite 4 MB
 flash fixture containing a real NVS partition and a real SPIFFS partition at

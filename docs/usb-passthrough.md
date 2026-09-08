@@ -37,12 +37,12 @@ follows is what it is doing, and how to fix it by hand.
 
 ## Prerequisites, and how they were verified here
 
-| Requirement | Status on this machine |
-|---|---|
-| `usbipd-win` installed | 5.3.0 |
-| Docker Desktop on WSL2 backend | yes, `docker-desktop` distro present |
-| WSL2 kernel with USB/IP | 6.6.87.2, `vhci-hcd` loads |
-| USB-serial drivers in the VM | `cp210x`, `ch341`, `ftdi_sio`, `pl2303`, `cdc-acm` all present |
+| Requirement                    | Status on this machine                                         |
+| ------------------------------ | -------------------------------------------------------------- |
+| `usbipd-win` installed         | 5.3.0                                                          |
+| Docker Desktop on WSL2 backend | yes, `docker-desktop` distro present                           |
+| WSL2 kernel with USB/IP        | 6.6.87.2, `vhci-hcd` loads                                     |
+| USB-serial drivers in the VM   | `cp210x`, `ch341`, `ftdi_sio`, `pl2303`, `cdc-acm` all present |
 
 That last row matters: it means CP2102, CH340/CH9102, FTDI and native-USB
 (S2/S3/C3) badges will all enumerate without building a custom kernel.

@@ -29,11 +29,11 @@ it to be.
 
 Three storage areas matter, and they behave very differently:
 
-| Storage | Where | Can we read it? | Notes |
-|---|---|---|---|
-| **SPI flash** | External chip | **Yes** — this is the dump | Everything interesting |
-| **eFuses** | Inside the chip | Yes, via `espefuse` | One-time programmable; the security config |
-| **ROM** | Inside the chip | Not over serial | Fixed by Espressif, same for all chips |
+| Storage       | Where           | Can we read it?            | Notes                                      |
+| ------------- | --------------- | -------------------------- | ------------------------------------------ |
+| **SPI flash** | External chip   | **Yes** — this is the dump | Everything interesting                     |
+| **eFuses**    | Inside the chip | Yes, via `espefuse`        | One-time programmable; the security config |
+| **ROM**       | Inside the chip | Not over serial            | Fixed by Espressif, same for all chips     |
 
 The boot sequence is: **ROM bootloader** (burned into the chip, runs first,
 speaks the serial protocol esptool uses) → **second-stage bootloader** (from
@@ -65,12 +65,12 @@ fuse name           block     description                                       
 The `R/W` field is the part beginners miss. It describes **whether the fuse is
 still readable and writable**, not its value:
 
-| Marker | Meaning |
-|---|---|
-| `R/W` | Readable and still writable — nothing locked |
-| `R/-` | Readable, **write-protected** — value is frozen forever |
-| `-/W` | **Read-protected** — the chip refuses to show it (typical of key material) |
-| `-/-` | Both — the fuse is set and permanently hidden |
+| Marker | Meaning                                                                    |
+| ------ | -------------------------------------------------------------------------- |
+| `R/W`  | Readable and still writable — nothing locked                               |
+| `R/-`  | Readable, **write-protected** — value is frozen forever                    |
+| `-/W`  | **Read-protected** — the chip refuses to show it (typical of key material) |
+| `-/-`  | Both — the fuse is set and permanently hidden                              |
 
 A key you cannot read (`-/-`) is not a bug; it is the chip doing its job. On
 your badge every key block reads `USER/EMPTY` with `R/W`, meaning no keys were
@@ -80,16 +80,16 @@ ever burned.
 
 These are the ones to look at first, with your badge's actual values:
 
-| Fuse | Your badge | What it means if set |
-|---|---|---|
+| Fuse                 | Your badge        | What it means if set                                |
+| -------------------- | ----------------- | --------------------------------------------------- |
 | `SPI_BOOT_CRYPT_CNT` | `0b000` (Disable) | **Flash encryption.** Your dump would be ciphertext |
-| `SECURE_BOOT_EN` | `False` | **Secure boot.** Chip refuses unsigned firmware |
-| `DIS_DOWNLOAD_MODE` | `False` | Serial bootloader disabled — **no dumping at all** |
-| `DIS_PAD_JTAG` | `False` | JTAG physically disabled |
-| `SOFT_DIS_JTAG` | `0b000` | JTAG disabled in software |
-| `RD_DIS` | `0` | Bitmask of key blocks made unreadable |
-| `WR_DIS` | `0` | Bitmask of fuses frozen against further writes |
-| `SECURE_VERSION` | `0` | Anti-rollback counter; blocks older firmware |
+| `SECURE_BOOT_EN`     | `False`           | **Secure boot.** Chip refuses unsigned firmware     |
+| `DIS_DOWNLOAD_MODE`  | `False`           | Serial bootloader disabled — **no dumping at all**  |
+| `DIS_PAD_JTAG`       | `False`           | JTAG physically disabled                            |
+| `SOFT_DIS_JTAG`      | `0b000`           | JTAG disabled in software                           |
+| `RD_DIS`             | `0`               | Bitmask of key blocks made unreadable               |
+| `WR_DIS`             | `0`               | Bitmask of fuses frozen against further writes      |
+| `SECURE_VERSION`     | `0`               | Anti-rollback counter; blocks older firmware        |
 
 **All zero means completely unlocked** — which is why your badge dumped
 cleanly. That is the common case for conference badges, because locking one
@@ -204,11 +204,11 @@ Your badge's app0, from `reports/triage.txt`:
 
 The address tells you what the segment *is*. For the ESP32-S3:
 
-| Address range | Name | Contains |
-|---|---|---|
-| `0x3C000000`–`0x3D000000` | **DROM** | Constant data, mapped from flash — **strings live here** |
-| `0x3FC80000`–`0x3FCF0000` | **DRAM** | Read/write data, copied into internal SRAM |
-| `0x40370000`–`0x403E0000` | **IRAM** | Code copied into internal SRAM (fast/interrupt code) |
+| Address range             | Name     | Contains                                                      |
+| ------------------------- | -------- | ------------------------------------------------------------- |
+| `0x3C000000`–`0x3D000000` | **DROM** | Constant data, mapped from flash — **strings live here**      |
+| `0x3FC80000`–`0x3FCF0000` | **DRAM** | Read/write data, copied into internal SRAM                    |
+| `0x40370000`–`0x403E0000` | **IRAM** | Code copied into internal SRAM (fast/interrupt code)          |
 | `0x42000000`–`0x44000000` | **IROM** | Executable code, mapped from flash — **the bulk of firmware** |
 
 So your badge's segments are:
@@ -248,12 +248,12 @@ which is why triage can tell you:
 
 Entropy measures randomness, 0–8 bits per byte:
 
-| Value | Typically means |
-|---|---|
-| 0.0 | All one byte — blank/erased flash |
-| 1–5 | Text, tables, sparse data |
-| 5–7 | **Compiled code** (your segments: 5.65–7.21) |
-| 7.5–8.0 | Compressed or **encrypted** |
+| Value   | Typically means                              |
+| ------- | -------------------------------------------- |
+| 0.0     | All one byte — blank/erased flash            |
+| 1–5     | Text, tables, sparse data                    |
+| 5–7     | **Compiled code** (your segments: 5.65–7.21) |
+| 7.5–8.0 | Compressed or **encrypted**                  |
 
 The entropy map in `triage.txt` draws this across the whole chip, so you can
 see at a glance which regions hold something. A dump that is ~8.0 everywhere
@@ -304,17 +304,17 @@ entries by default for exactly this reason.
 
 After `[9]` acquire and `[12]` analyse, in the order worth reading:
 
-| File | What it answers |
-|---|---|
-| `reports/security-posture.txt` | **Read first.** Is anything locked? |
-| `reports/hunt.txt` | Flag/credential pattern hits, with source files |
-| `reports/triage.txt` | What the dump is: entropy map, images, segments |
-| `reports/partitions.txt` | The flash map |
-| `reports/nvs-*.txt` | Config values, including erased ones |
-| `reports/strings.txt` | Every string, prefixed with its source file |
-| `parts/` | One `.bin` per partition |
-| `extract/` | Files recovered from filesystems and NVS blobs |
-| `meta/artifacts.sha256` | Hashes — `[19]` re-verifies |
+| File                           | What it answers                                 |
+| ------------------------------ | ----------------------------------------------- |
+| `reports/security-posture.txt` | **Read first.** Is anything locked?             |
+| `reports/hunt.txt`             | Flag/credential pattern hits, with source files |
+| `reports/triage.txt`           | What the dump is: entropy map, images, segments |
+| `reports/partitions.txt`       | The flash map                                   |
+| `reports/nvs-*.txt`            | Config values, including erased ones            |
+| `reports/strings.txt`          | Every string, prefixed with its source file     |
+| `parts/`                       | One `.bin` per partition                        |
+| `extract/`                     | Files recovered from filesystems and NVS blobs  |
+| `meta/artifacts.sha256`        | Hashes — `[19]` re-verifies                     |
 
 A hunt line reads source-first, so you always know where a hit came from:
 
@@ -327,23 +327,23 @@ A hunt line reads source-first, so you always know where a hit came from:
 
 ## 7. Vocabulary
 
-| Term | Meaning |
-|---|---|
-| **eFuse** | One-time-programmable bit inside the chip. Never resets |
-| **ROM bootloader** | Fixed code in the chip; speaks esptool's protocol |
-| **Second-stage bootloader** | From flash; reads the partition table |
-| **Partition table** | 4 KB map at 0x8000 |
-| **OTA** | Over-The-Air update; the `app0`/`app1` two-slot scheme |
-| **NVS** | Key/value config store |
-| **SPIFFS / LittleFS** | Flash filesystems holding real files |
-| **DROM / IROM** | Flash-mapped data / code |
-| **DRAM / IRAM** | Internal SRAM data / code |
-| **Segment** | "Load N bytes at address X" inside an app image |
-| **App descriptor** | Build metadata at offset 0x20 of an app image |
-| **Entropy** | Randomness 0–8; ~8 means encrypted or compressed |
-| **Xtensa / RISC-V** | The two CPU architectures; S3 is Xtensa, C3/C6 are RISC-V |
-| **Secure boot** | Chip refuses unsigned firmware |
-| **Flash encryption** | Flash stored encrypted; dumps are ciphertext |
+| Term                        | Meaning                                                   |
+| --------------------------- | --------------------------------------------------------- |
+| **eFuse**                   | One-time-programmable bit inside the chip. Never resets   |
+| **ROM bootloader**          | Fixed code in the chip; speaks esptool's protocol         |
+| **Second-stage bootloader** | From flash; reads the partition table                     |
+| **Partition table**         | 4 KB map at 0x8000                                        |
+| **OTA**                     | Over-The-Air update; the `app0`/`app1` two-slot scheme    |
+| **NVS**                     | Key/value config store                                    |
+| **SPIFFS / LittleFS**       | Flash filesystems holding real files                      |
+| **DROM / IROM**             | Flash-mapped data / code                                  |
+| **DRAM / IRAM**             | Internal SRAM data / code                                 |
+| **Segment**                 | "Load N bytes at address X" inside an app image           |
+| **App descriptor**          | Build metadata at offset 0x20 of an app image             |
+| **Entropy**                 | Randomness 0–8; ~8 means encrypted or compressed          |
+| **Xtensa / RISC-V**         | The two CPU architectures; S3 is Xtensa, C3/C6 are RISC-V |
+| **Secure boot**             | Chip refuses unsigned firmware                            |
+| **Flash encryption**        | Flash stored encrypted; dumps are ciphertext              |
 
 ---
 

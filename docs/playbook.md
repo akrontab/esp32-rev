@@ -30,12 +30,12 @@ That tells you the architecture before any software runs.
 You now know the chip family, revision, MAC and flash size. The chip family
 decides the CPU architecture, which matters when you get to disassembly:
 
-| Chip | Core | Notes |
-|---|---|---|
-| ESP32 | Xtensa LX6, dual | The classic module; bootloader at 0x1000 |
-| ESP32-S2 | Xtensa LX7 | Native USB |
-| ESP32-S3 | Xtensa LX7, dual | Native USB + USB-JTAG |
-| ESP32-C3 / C6 / H2 | RISC-V | Bootloader at 0x0; USB-JTAG on-chip |
+| Chip               | Core             | Notes                                    |
+| ------------------ | ---------------- | ---------------------------------------- |
+| ESP32              | Xtensa LX6, dual | The classic module; bootloader at 0x1000 |
+| ESP32-S2           | Xtensa LX7       | Native USB                               |
+| ESP32-S3           | Xtensa LX7, dual | Native USB + USB-JTAG                    |
+| ESP32-C3 / C6 / H2 | RISC-V           | Bootloader at 0x0; USB-JTAG on-chip      |
 
 **Decision point.** If the chip does not respond at all, see
 [troubleshooting](troubleshooting.md#the-badge-is-not-detected). If it
