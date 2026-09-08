@@ -14,13 +14,17 @@ import sys
 META = os.path.join(os.environ.get("WORK", "/work"), "meta")
 
 PATTERNS = {
-    # "Chip is ESP32-D0WD-V3 (revision v3.1)"
-    "chip_model":    r"Chip is\s+([^\s(]+)",
-    "chip_revision": r"Chip is\s+[^\s(]+\s+\(revision\s+([^)]+)\)",
-    # "Detecting chip type... ESP32-S3"
+    # esptool 5.x prints "Chip type:          ESP32-D0WD-V3 (revision v3.1)".
+    # The 4.x spelling ("Chip is ...") is kept as an alternative so a pinned
+    # older esptool still parses.
+    "chip_model":    r"(?:Chip type:|Chip is)\s+([^\s(]+)",
+    "chip_revision": r"(?:Chip type:|Chip is)\s+\S+\s+\(revision\s+([^)]+)\)",
+    # "Detecting chip type...ESP32-S3" - printed with end="" so the value
+    # lands on the same line.
     "chip_family":   r"Detecting chip type\.\.\.\s*(\S+)",
     "features":      r"Features:\s*(.+)",
-    "crystal":       r"Crystal is\s*(\S+)",
+    "crystal":       r"(?:Crystal frequency:|Crystal is)\s*(\S+)",
+    "usb_mode":      r"USB mode:\s*(.+)",
     "mac":           r"(?:MAC|BASE MAC):\s*([0-9a-fA-F:]{17})",
     "flash_size":    r"Detected flash size:\s*(\S+)",
     "flash_mfr":     r"Manufacturer:\s*([0-9a-fA-F]+)",
@@ -37,6 +41,10 @@ LOCK_HINTS = [
     ("flash_encryption_enabled", r"Flash Encryption:\s*(Enabled|Yes)"),
     ("secure_boot_enabled",      r"Secure Boot:\s*(Enabled|Yes)"),
     ("download_mode_disabled",   r"Download Mode:\s*(Disabled)"),
+    # esptool announces this on the chip-type line. It means most commands,
+    # including any flash read, will be refused - the single most important
+    # thing to notice early.
+    ("secure_download_mode",     r"in Secure Download Mode"),
 ]
 
 
@@ -79,7 +87,7 @@ def main():
     print()
     print("=== target summary ===")
     for k in ("chip_model", "chip_revision", "chip_arg", "features", "crystal",
-              "mac", "flash_size", "flash_mfr", "flash_device"):
+              "usb_mode", "mac", "flash_size", "flash_mfr", "flash_device"):
         if out.get(k):
             print("  %-14s %s" % (k + ":", out[k]))
     locked = [n for n, _ in LOCK_HINTS if out.get(n)]
