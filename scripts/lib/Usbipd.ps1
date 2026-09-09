@@ -110,10 +110,40 @@ function Show-UsbDevices {
 }
 
 function Get-VmSerialDevices {
-    <# Serial device nodes currently visible inside the Docker VM. #>
-    $out = wsl.exe -d $script:DockerDistro -- sh -c 'ls -1 /dev/ttyUSB* /dev/ttyACM* 2>/dev/null' 2>$null
+    <# Serial device nodes currently visible inside the Docker VM, NEWEST FIRST.
+       Newest-first matters: a native-USB badge (S2/S3/C3/C6) re-enumerates on
+       reset/replug and comes back as a higher-numbered node, while the stale
+       old node can linger. The live badge is the most recently created one. #>
+    $out = wsl.exe -d $script:DockerDistro -- sh -c 'ls -1t /dev/ttyUSB* /dev/ttyACM* 2>/dev/null' 2>$null
     if (-not $out) { return @() }
     @($out -split "`n" | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+}
+
+function Resolve-BadgeDevice {
+    <#
+      Return the serial node a hardware command should use, and keep the saved
+      state honest. The stored path can be STALE-BUT-PRESENT: after a badge
+      re-enumerates, the old dead node still exists, so "is it present?" is not
+      enough - opening it makes esptool hang. When more than one node is
+      present, or the stored one is gone, prefer the newest and update state,
+      telling the operator what happened.
+    #>
+    $nodes = @(Get-VmSerialDevices)          # newest first
+    $stored = $script:State.DevicePath
+    if ($nodes.Count -eq 0) { return $null }
+
+    if ($nodes.Count -eq 1) {
+        if ($stored -ne $nodes[0]) { Update-State @{ DevicePath = $nodes[0] } }
+        return $nodes[0]
+    }
+
+    # Multiple nodes: the stored one may be a stale dead node. Prefer newest.
+    if ($stored -eq $nodes[0]) { return $stored }
+    Write-Warn "Multiple serial nodes in the VM ($($nodes -join ', '))."
+    Write-Warn "The badge likely re-enumerated; using the newest ($($nodes[0]))."
+    Write-Info "If that's wrong, detach/re-attach from the USB device manager [3]."
+    Update-State @{ DevicePath = $nodes[0] }
+    return $nodes[0]
 }
 
 function Test-DeviceInVm {

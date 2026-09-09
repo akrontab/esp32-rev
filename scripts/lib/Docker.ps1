@@ -127,13 +127,12 @@ function Invoke-Container {
     foreach ($k in $Env.Keys) { $envMap[$k] = $Env[$k] }
 
     if ($WithDevice) {
-        $dev = $script:State.DevicePath
+        # Resolve the live node rather than trusting the stored path: a
+        # re-enumerated badge leaves a stale-but-present dead node that would
+        # otherwise be opened and hang. Resolve-BadgeDevice prefers the newest.
+        $dev = Resolve-BadgeDevice
         if (-not $dev) {
-            Write-Err "No serial device attached. Use the USB device manager first."
-            return
-        }
-        if (-not (Test-DeviceInVm $dev)) {
-            Write-Err "$dev is not present in the Docker VM - re-attach the badge."
+            Write-Err "No serial device in the Docker VM. Attach the badge via the USB device manager [3]."
             return
         }
         $runArgs += @('--device', "${dev}:${dev}")

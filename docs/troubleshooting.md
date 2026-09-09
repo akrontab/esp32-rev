@@ -18,6 +18,22 @@ Work down this list; it is ordered by how often each cause is the real one.
    but the *console* may be at 74880 (ESP ROM on some parts) rather than
    115200. Try `[8]` with 74880.
 
+## A hardware command (chip ID, dump, ...) hangs
+
+Usually a **stale serial node**. Native-USB parts (S3/C3/C6) re-enumerate on
+reset/replug and come back as a higher-numbered node (e.g. `ttyACM1`), while the
+old dead node (`ttyACM0`) lingers in the VM. Opening the dead node makes esptool
+wait forever for a chip that never answers.
+
+The control plane now resolves to the **newest** node automatically and warns
+when several are present, so this should self-heal. If it still misbehaves, clear
+the phantom node with a clean detach/re-attach from the USB device manager `[3]`
+(detach, then attach), or check which node is live:
+
+```powershell
+wsl -d docker-desktop -- ls -lt /dev/ttyACM* /dev/ttyUSB*   # newest first
+```
+
 ## The dump is all 0xFF or all 0x00
 
 `esp-dump.sh` warns about this explicitly. It means the read was refused or
