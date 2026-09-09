@@ -234,6 +234,73 @@ function Invoke-BleDump {
     Invoke-HostBle -Script 'ble-dump.py' -Arguments @($addr)
 }
 
+function Connect-Badge {
+    <#
+      One-key badge attach. A badge is normally the only USB-serial device
+      present, so auto-detect and attach it - no device-list picking. Falls
+      back to the full device manager only when it's ambiguous.
+    #>
+    if (-not (Test-UsbipdReady)) { return }
+    Initialize-UsbipdVm
+    $serial = @(Get-UsbDevices | Where-Object IsSerial)
+    if ($serial.Count -eq 0) {
+        Write-Warn "No USB-serial device found."
+        Write-Info "Plug the badge in (and check the cable carries data, not just power)."
+        Write-Info "For a non-standard bridge, attach it manually via the USB device manager [3]."
+        return
+    }
+    if ($serial.Count -gt 1) {
+        Write-Warn "Several USB-serial devices are present - can't guess which is the badge."
+        Write-Info "Pick it in the USB device manager [3]."
+        return
+    }
+    $sel = $serial[0]
+    Write-Info "Attaching $($sel.KnownAs) ($($sel.BusId) $($sel.HardwareId))"
+    Connect-BadgeDevice -BusId $sel.BusId -HardwareId $sel.HardwareId | Out-Null
+}
+
+function Invoke-QuickStart {
+    <#
+      First-run / get-ready flow: build core images, ensure a target, attach
+      the badge - the whole setup in one place instead of four menu dives.
+      Every step is idempotent, so it's safe to re-run.
+    #>
+    Write-Rule 'Quick start'
+
+    # 1. Core images (the two always needed; hashcat/ghidra built on demand).
+    $need = @()
+    if (-not (Test-ImageExists 'esptool'))  { $need += 'esptool' }
+    if (-not (Test-ImageExists 'analysis')) { $need += 'analysis' }
+    if ($need) {
+        Write-Step "Building core images: $($need -join ', ') (a few minutes, one time)"
+        foreach ($n in $need) { Build-Image -Name $n | Out-Null }
+    } else {
+        Write-Ok "Core images already built."
+    }
+
+    # 2. Target.
+    if ($script:State.Target -and (Test-Path (Get-TargetPath))) {
+        Write-Ok "Target: $($script:State.Target)"
+    } else {
+        $name = Read-Host "Name this badge/target [badge]"
+        if (-not $name) { $name = 'badge' }
+        $safe = New-Target -Name $name
+        if ($safe) { Update-State @{ Target = $safe } }
+    }
+
+    # 3. Attach the badge (skippable - you may just want to analyse a dump).
+    if (Confirm-Action "Attach the badge now?" -Default) {
+        Connect-Badge
+    }
+
+    Write-Rule
+    if ($script:State.DevicePath) {
+        Write-Ok "Ready. Next: [9] full acquisition, then [12] analysis."
+    } else {
+        Write-Ok "Set up. Attach a badge ([a]) when ready, then [9] acquire; or analyse an existing dump with [12]."
+    }
+}
+
 function Invoke-DeviceManager {
     while ($true) {
         Write-Host ""
@@ -401,9 +468,11 @@ function Show-Menu {
     Write-Host "  ESP32 BADGE RE - CONTROL PLANE" -ForegroundColor Cyan
     Write-Host ("  target: {0,-22} device: {1}" -f $t, (Get-DeviceStatusLine)) -ForegroundColor DarkGray
     Write-Host "==============================================================================" -ForegroundColor DarkCyan
+    Write-Host "  GET STARTED" -ForegroundColor Green
+    Write-Host "    0) Quick start (build + target + attach)     a) Attach badge"
     Write-Host "  SETUP" -ForegroundColor Yellow
     Write-Host "    1) Environment check                 2) Build / rebuild images"
-    Write-Host "    3) USB device manager                4) Select / create target"
+    Write-Host "    3) USB device manager (advanced)     4) Select / create target"
     Write-Host "    V) Recreate host venv"
     Write-Host "  HARDWARE  (read-only)" -ForegroundColor Yellow
     Write-Host "    5) Identify chip                     6) Read eFuses / security posture"
@@ -437,6 +506,8 @@ function Show-Menu {
 function Invoke-MenuChoice {
     param([string]$Choice)
     switch ($Choice) {
+        '0'  { Invoke-QuickStart }
+        'a'  { Connect-Badge }
         '1'  { Invoke-EnvironmentCheck }
         '2'  { Invoke-BuildImages }
         '3'  { Invoke-DeviceManager }
@@ -499,11 +570,19 @@ if ($Target) {
     }
 }
 
-# A first run has nothing built and no target; say so once rather than letting
-# the operator discover it one failed menu item at a time.
-if (-not (Test-ImageExists 'esptool') -or -not (Test-ImageExists 'analysis')) {
+# Fresh setup? Offer the one-shot Quick start rather than making the operator
+# discover the build/target/attach steps one failed menu item at a time.
+if (-not $Target -and (
+        -not (Test-ImageExists 'esptool') -or
+        -not (Test-ImageExists 'analysis') -or
+        -not $script:State.Target)) {
     Write-Host ""
-    Write-Warn "Tool images are not built yet - run [2] before working on hardware."
+    Write-Info "Looks like a fresh setup (images or target not ready)."
+    if (Confirm-Action "Run Quick start now - build images, pick a target, attach the badge?" -Default) {
+        Invoke-QuickStart
+    } else {
+        Write-Info "Run it anytime with [0]. Attach a badge with [a]."
+    }
 }
 
 try {

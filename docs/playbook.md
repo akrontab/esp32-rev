@@ -10,12 +10,17 @@ numbers refer to `scripts\badge.ps1`.
 
 ## Phase 0 — before you touch the badge
 
-1. `[1]` Environment check. Do this **before** the contest, not during it.
-   Building images and fixing USB passthrough under time pressure is
-   avoidable pain.
-2. `[2]` Build both images.
-3. Plug the badge in and run `[3]` to confirm it appears and attaches.
-   Detach again if you like — the point is to know it works.
+Do this **before** the contest, not during it — building images and fixing USB
+passthrough under time pressure is avoidable pain.
+
+1. `[1]` Environment check (Docker, usbipd, USB passthrough).
+2. Plug the badge in and run `[0]` **Quick start** — builds the core images,
+   creates a target, and attaches the badge in one flow. On a truly fresh setup
+   the control plane offers it automatically at launch.
+
+That's the whole setup. `[a]` re-attaches the badge any time with one keypress;
+the individual steps ([2] build, [3] USB manager, [4] target) remain for the
+manual case.
 
 Photograph the board first. Note the module marking (ESP32-WROOM-32,
 ESP32-S3-WROOM-1, ...), any exposed pads or headers, and the USB bridge chip.
@@ -25,7 +30,7 @@ That tells you the architecture before any software runs.
 
 ## Phase 1 — identify (2 minutes)
 
-`[4]` create a target, `[3]` attach the badge, then `[5]` identify the chip.
+After Quick start `[0]` (or `[a]` to attach), `[5]` identify the chip.
 
 You now know the chip family, revision, MAC and flash size. The chip family
 decides the CPU architecture, which matters when you get to disassembly:

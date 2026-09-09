@@ -16,19 +16,21 @@ Nothing writes flash, erases, or burns eFuses. See [Safety](#safety).
 ## Quick start
 
 ```powershell
-# 1. Launch the control plane (creates and activates .venv on first run)
+# 1. Plug the badge in, then launch the control plane
 .\scripts\badge.ps1
 
-# 2. From the menu:
-#    [1] Environment check     - confirms Docker, usbipd, USB passthrough
-#    [2] Build images          - choose "both" (~570 MB total, a few minutes)
-#    [4] Select/create target  - name your badge
-#    [3] USB device manager    - plug the badge in, then attach it
-#    [9] Full acquisition      - identify, eFuses, partitions, full dump
-#    [12] Full analysis        - carve, extract, dump NVS, hunt for flags
+# 2. On a fresh setup it offers Quick start [0] automatically - or press [0]:
+#    builds the core images, names your target, and attaches the badge in one go.
+#    (Later, [a] attaches the badge on its own - one keypress.)
+
+# 3. Then:
+#    [9]  Full acquisition  - identify, eFuses, partitions, full flash dump
+#    [12] Full analysis     - carve, extract, dump NVS, hunt for flags
 ```
 
-You can also jump straight to a target:
+`[0] Quick start` replaces the old build → target → attach dance; the
+individual steps ([1] env check, [2] build, [3] USB manager, [4] target) are
+still there for when you want them. You can also jump straight to a target:
 
 ```powershell
 .\scripts\badge.ps1 -Target defcon-badge
