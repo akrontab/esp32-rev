@@ -228,6 +228,11 @@ function Invoke-CrackLocal {
     Invoke-CrackContainer -Command $crackArgs
 }
 
+function Invoke-BleScan {
+    $secs = Read-Host "Scan seconds [10]"; if (-not $secs) { $secs = '10' }
+    Invoke-HostBle -Script 'ble-scan.py' -Arguments @('--seconds', $secs)
+}
+
 function Invoke-BleDump {
     $addr = Read-Host "Badge BD address (from scan, e.g. BC:E1:00:07:0D:03)"
     if (-not $addr) { Write-Warn "Address required."; return }
