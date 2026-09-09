@@ -23,9 +23,9 @@ Nothing writes flash, erases, or burns eFuses. See [Safety](#safety).
 #    builds the core images, names your target, and attaches the badge in one go.
 #    (Later, [a] attaches the badge on its own - one keypress.)
 
-# 3. Then:
-#    [9]  Full acquisition  - identify, eFuses, partitions, full flash dump
-#    [12] Full analysis     - carve, extract, dump NVS, hunt for flags
+# 3. [R] RUN ALL - acquire from the badge AND analyse in one command,
+#    ending in reports/SUMMARY.md (the one-page brief). Or step through
+#    [9] acquire and [12] analyse separately.
 ```
 
 `[0] Quick start` replaces the old build → target → attach dance; the

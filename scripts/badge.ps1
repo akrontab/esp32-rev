@@ -406,6 +406,42 @@ function Invoke-Analysis {
     Invoke-Container -Image analysis -Command $Command -Interactive:$Interactive
 }
 
+function Invoke-RunAll {
+    <#
+      Everything read-only in one command: acquire from the badge (chip,
+      eFuses, partition table, full flash dump) then run the offline pipeline
+      (carve per-partition bins + triage/NVS/hunt reports + the consolidated
+      SUMMARY.md). Badge → full report set, one keypress.
+    #>
+    if (-not (Assert-Target)) { return }
+    Write-Rule 'Full run (acquire + analyse)'
+    if (-not $script:State.DevicePath -and -not (Get-VmSerialDevices)) {
+        Write-Warn "No badge attached. Attach it first with [a] (or [3])."
+        if (-not (Confirm-Action "Continue with offline analysis only (needs an existing dump)?")) { return }
+    } else {
+        Write-Step "1/2  Acquiring from the badge (identify, eFuses, partitions, full dump)"
+        Invoke-Container -Image esptool -Command @('esp-acquire.sh') -WithDevice
+        if ($script:LastContainerExit -ne 0) {
+            Write-Warn "Acquisition had problems (exit $script:LastContainerExit)."
+            if (-not (Confirm-Action "Analyse whatever was captured anyway?" -Default)) { return }
+        }
+    }
+    if (-not (Test-DumpPresent)) {
+        Write-Err "No flash dump present - nothing to analyse. Fix acquisition, then re-run."
+        return
+    }
+    Write-Step "2/2  Analysing the dump (carve bins + reports + summary)"
+    Invoke-Container -Image analysis -Command @('fw-pipeline.sh')
+    Write-Rule
+    $summary = Get-ArtifactPath 'reports\SUMMARY.md'
+    if (Test-Path $summary) {
+        Write-Ok "Done. One-page brief: workspace\$($script:State.Target)\reports\SUMMARY.md"
+        Write-Info "View it with [18], or open the workspace folder."
+    } else {
+        Write-Warn "Finished, but no SUMMARY.md was produced - check the output above."
+    }
+}
+
 function Invoke-Monitor {
     if (-not (Assert-Target)) { return }
     $baud = Read-Host "Console baud [115200]"
@@ -475,6 +511,7 @@ function Show-Menu {
     Write-Host "==============================================================================" -ForegroundColor DarkCyan
     Write-Host "  GET STARTED" -ForegroundColor Green
     Write-Host "    0) Quick start (build + target + attach)     a) Attach badge"
+    Write-Host "    R) RUN ALL - acquire + analyse -> SUMMARY.md (badge to full report)"
     Write-Host "  SETUP" -ForegroundColor Yellow
     Write-Host "    1) Environment check                 2) Build / rebuild images"
     Write-Host "    3) USB device manager (advanced)     4) Select / create target"
@@ -513,6 +550,7 @@ function Invoke-MenuChoice {
     switch ($Choice) {
         '0'  { Invoke-QuickStart }
         'a'  { Connect-Badge }
+        'r'  { Invoke-RunAll }
         '1'  { Invoke-EnvironmentCheck }
         '2'  { Invoke-BuildImages }
         '3'  { Invoke-DeviceManager }

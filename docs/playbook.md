@@ -30,6 +30,10 @@ That tells you the architecture before any software runs.
 
 ## Phase 1 — identify (2 minutes)
 
+The fastest path once set up is `[R]` **RUN ALL** - acquire from the badge and
+analyse in one command, ending in `reports/SUMMARY.md`. The phases below are
+the same steps individually, for when you want control.
+
 After Quick start `[0]` (or `[a]` to attach), `[5]` identify the chip.
 
 You now know the chip family, revision, MAC and flash size. The chip family
