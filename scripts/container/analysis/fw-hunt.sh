@@ -175,3 +175,10 @@ record "hunt" "strings=$TOTAL custom=$N_CUSTOM default=$N_DEFAULT mode=$MODE"
 register_artifact "$REPORT"
 register_artifact "$STRINGS_OUT"
 ok "Hunt complete -> reports/hunt.txt"
+
+# Categorise the same strings into signal vs noise buckets - turns the 10k-line
+# strings.txt into a few hundred triaged leads.
+if command -v fw-leads.py >/dev/null 2>&1; then
+  fw-leads.py >/dev/null 2>&1 && register_artifact "$DIR_REPORTS/leads.txt" \
+    && ok "Categorised leads -> reports/leads.txt"
+fi

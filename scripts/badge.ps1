@@ -526,6 +526,7 @@ function Show-Menu {
     Write-Host "   12) Full analysis pipeline           13) Triage a dump"
     Write-Host "   14) Split partitions                 15) Extract filesystems"
     Write-Host "   16) Dump NVS                         17) Hunt flags / secrets"
+    Write-Host "   35) Triage strings (signal vs noise)"
     Write-Host "  BLUETOOTH  (BLE challenges - host-side via venv)" -ForegroundColor Yellow
     Write-Host "   25) Scan for BLE devices             26) Dump badge GATT + read all"
     Write-Host "   27) Notifications / write"
@@ -569,6 +570,7 @@ function Invoke-MenuChoice {
         '15' { Invoke-Analysis -Command @('fw-fs.py') }
         '16' { Invoke-Analysis -Command @('fw-nvs.py') }
         '17' { Invoke-Analysis -Command @('fw-hunt.sh') }
+        '35' { Invoke-Analysis -Command @('fw-leads.py') }
         '18' { Show-Reports }
         '19' { if (Assert-Target) { Invoke-HostPython -Script 'verify.py' -Arguments @((Get-TargetPath)) } }
         '20' { Invoke-HostPython -Script 'summary.py' -Arguments @((Get-WorkspaceRoot)) }

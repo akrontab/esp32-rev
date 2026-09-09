@@ -196,6 +196,8 @@ def section_leads(out):
                        "or disassembly ([33]). See reports/hunt.txt._")
     else:
         out.append("_Hunt not run yet ([17]/[12])._")
+    if os.path.isfile(os.path.join(REPORTS, "leads.txt")):
+        out.append("\nCategorised signal (ciphers, creds, hosts, lore): `reports/leads.txt`")
 
 
 def main():
