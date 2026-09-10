@@ -122,7 +122,8 @@ set.
 5. **Hunt** — flags, credentials, keys, URLs, JWTs, across the raw dump, every
    partition and every extracted file, each hit attributed to its source.
 
-Read `reports/hunt.txt` first, then `reports/triage.txt`.
+Read `reports/SUMMARY.md` first (the one-page brief), then `reports/leads.txt`
+(strings triaged into signal-vs-noise buckets by `[35]`), then `reports/hunt.txt`.
 
 ### Where flags actually hide, in rough order of likelihood
 

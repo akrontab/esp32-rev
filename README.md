@@ -275,6 +275,7 @@ base64 blobs, JWTs, MAC addresses, and 32–64 char hex (hashes and keys).
 
 | Document                                           | Contents                                                                                 |
 | -------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| [docs/status.md](docs/status.md)                 | **Resuming? Start here.** Current state, menu map, badge findings, outstanding work |
 | [docs/background.md](docs/background.md)           | **New to ESP32 RE? Start here.** How to read a dump: eFuses, partitions, app images, NVS |
 | [docs/hash-cracking.md](docs/hash-cracking.md)     | Cracking hashes: local GPU first, Linode rig as manual escalation                        |
 | [docs/ble.md](docs/ble.md)                         | Bluetooth LE challenges: scan, dump GATT, why BLE runs host-side                         |
