@@ -29,6 +29,8 @@ Fest 2025 badge and the reports the toolkit produced from it. Open
 | Read/write protection | none (all eFuse key blocks USER/EMPTY) |
 
 Consequence: fully unlocked — plain serial dump and analysis are meaningful.
+See `FINDING-ble-identity-keys.md`: BLE identity root (IR/IRK/DHK) recovered in
+cleartext from erased NVS; verified **unique to this badge**, not batch-wide.
 
 ## Firmware identity (`[13]`)
 
@@ -59,6 +61,7 @@ over **BLE GATT** plus embedded string puzzles.
 | strings | Bacon cipher `abaab baaaa babba ...` | decode pending |
 | strings | `Comment  L3tM31n!` (planted password) | login-puzzle flavor |
 | WiFi (`[31]`) | ESP-NOW + HTTP server + SmartConfig, no stored creds | badge-to-badge, not AP-joining |
+| NVS (erased) | BLE identity root IR/IRK/DHK in cleartext `bt_config.conf` | Yes — see `FINDING-ble-identity-keys.md` (keys are per-device) |
 
 ## Flags
 
