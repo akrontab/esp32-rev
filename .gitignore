@@ -4,6 +4,14 @@
 workspace/*
 !workspace/.gitkeep
 
+# Exception: the WWHF 2025 badge is committed as a DEMO workspace (the user's
+# own badge, event over, stock firmware). Everything else stays ignored, so the
+# policy above still protects future/other dumps.
+!workspace/badge-2025/
+# ...but not the carved partition bins: they are fully regenerable from the
+# dump via [12], and would add ~8 MB of derived data to git history.
+workspace/badge-2025/parts/
+
 # Host-side virtual environment (recreated by the control plane on demand).
 .venv/
 
@@ -39,3 +47,6 @@ linode/*.tfvars
 linode/id_esp32crack
 linode/id_esp32crack.pub
 
+# The host WiFi scan captures nearby networks (neighbours' SSIDs/BSSIDs), not
+# badge data - keep it out of the committed demo workspace.
+workspace/badge-2025/reports/wifi-scan.*

@@ -1,0 +1,74 @@
+[
+  {
+    "index": 0,
+    "label": "nvs",
+    "type": "data",
+    "subtype": "nvs",
+    "type_id": 1,
+    "subtype_id": 2,
+    "offset": 36864,
+    "size": 20480,
+    "flags": 0,
+    "encrypted": false
+  },
+  {
+    "index": 1,
+    "label": "otadata",
+    "type": "data",
+    "subtype": "otadata",
+    "type_id": 1,
+    "subtype_id": 0,
+    "offset": 57344,
+    "size": 8192,
+    "flags": 0,
+    "encrypted": false
+  },
+  {
+    "index": 2,
+    "label": "app0",
+    "type": "app",
+    "subtype": "ota_0",
+    "type_id": 0,
+    "subtype_id": 16,
+    "offset": 65536,
+    "size": 3342336,
+    "flags": 0,
+    "encrypted": false
+  },
+  {
+    "index": 3,
+    "label": "app1",
+    "type": "app",
+    "subtype": "ota_1",
+    "type_id": 0,
+    "subtype_id": 17,
+    "offset": 3407872,
+    "size": 3342336,
+    "flags": 0,
+    "encrypted": false
+  },
+  {
+    "index": 4,
+    "label": "spiffs",
+    "type": "data",
+    "subtype": "spiffs",
+    "type_id": 1,
+    "subtype_id": 130,
+    "offset": 6750208,
+    "size": 1572864,
+    "flags": 0,
+    "encrypted": false
+  },
+  {
+    "index": 5,
+    "label": "coredump",
+    "type": "data",
+    "subtype": "coredump",
+    "type_id": 1,
+    "subtype_id": 3,
+    "offset": 8323072,
+    "size": 65536,
+    "flags": 0,
+    "encrypted": false
+  }
+]

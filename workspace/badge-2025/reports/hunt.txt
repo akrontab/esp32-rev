@@ -1,0 +1,93 @@
+---------------------------------------------------------------
+HUNT  run 20260909T035116Z   (10219 strings searched)
+patterns: 13 default
+---------------------------------------------------------------
+
+### [default] /flag\{[^}]{0,120}\}/
+  (no matches)
+
+### [default] /FLAG\{[^}]{0,120}\}/
+  (no matches)
+
+### [default] /CTF\{[^}]{0,120}\}/
+  (no matches)
+
+### [default] /[A-Za-z0-9_]{2,20}\{[A-Za-z0-9_@!$%^&*()+=./-]{4,80}\}/
+  (no matches)
+
+### [default] /-----BEGIN [A-Z ]*PRIVATE KEY-----/
+  (no matches)
+
+### [default] /-----BEGIN CERTIFICATE-----/
+  (no matches)
+
+### [default] /(password|passwd|passphrase|secret|token|api[_-]?key|auth)["':= ]{1,4}[^\s"',;]{4,80}/
+  auth mode
+  (2 total matches)
+
+### [default] /(ssid|wifi|psk)["':= ]{1,4}[^\s"',;]{2,64}/
+  wifi: %d
+  (2 total matches)
+
+### [default] /[a-z][a-z0-9+.-]{2,10}://[^\s"'<>]{4,120}/
+  https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/adc.html#adc-limitations
+  (2 total matches)
+
+### [default] /[A-Za-z0-9+/]{40,}={0,2}/
+  /IDF/components/bt/controller/esp32c3/bt
+  /IDF/components/bt/host/bluedroid/bta/gatt/bta
+  /IDF/components/bt/host/bluedroid/bta/sys/bta
+  /IDF/components/bt/host/bluedroid/btc/core/btc
+  /IDF/components/bt/host/bluedroid/btc/profile/std/gap/btc
+  /IDF/components/bt/host/bluedroid/device/bdaddr
+  /IDF/components/bt/host/bluedroid/device/controller
+  /IDF/components/bt/host/bluedroid/device/interop
+  /IDF/components/bt/host/bluedroid/hci/hci
+  /IDF/components/bt/host/bluedroid/hci/packet
+  /IDF/components/bt/host/bluedroid/stack/btm/btm
+  /IDF/components/bt/host/bluedroid/stack/btu/btu
+  /IDF/components/bt/host/bluedroid/stack/hcic/hciblecmds
+  /IDF/components/bt/host/bluedroid/stack/include/stack/hcimsgs
+  /IDF/components/bt/host/bluedroid/stack/l2cap/l2c
+  /IDF/components/espcoredump/src/port/xtensa/core
+  /IDF/components/freertos/port/xtensa/port
+  /IDF/components/mbedtls/port/aes/dma/esp
+  IDF/components/hal/esp32s3/include/hal/i2c
+  IDF/components/hal/esp32s3/include/hal/systimer
+  VXpJMWRtUXllR3hhUjJSc1NVZHNla2xJUW5aa01sWjVTVkU5UFE9PQ==
+  arduinoespressif32/libraries/BLE/src/BLEAdvertisedDevice
+  arduinoespressif32/libraries/BLE/src/BLEAdvertising
+  arduinoespressif32/libraries/BLE/src/BLECharacteristic
+  arduinoespressif32/libraries/BLE/src/BLEClient
+  arduinoespressif32/libraries/BLE/src/BLEDescriptor
+  arduinoespressif32/libraries/BLE/src/BLEDevice
+  arduinoespressif32/libraries/BLE/src/BLEScan
+  arduinoespressif32/libraries/BLE/src/BLEService
+  arduinoespressif32/libraries/BLE/src/BLEUUID
+  arduinoespressif32/libraries/BLE/src/BLEUtils
+  arduinoespressif32/libraries/BLE/src/FreeRTOS
+  arduinoespressif32/libraries/SPI/src/SPI
+  arduinoespressif32/libraries/Wire/src/Wire
+  cdc5b000862320da91e4d66bc33792aabc224ff3
+  f70f63def2543f77ff268579dd6ece12d0f7fc78
+  (84 total matches)
+
+### [default] /(eyJ[A-Za-z0-9_-]{10,}\.){2}[A-Za-z0-9_-]{10,}/
+  (no matches)
+
+### [default] /([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}/
+  (no matches)
+
+### [default] /[0-9a-f]{32,64}/
+  9565c30443f0bf288125996763f81734
+  cdc5b000862320da91e4d66bc33792aabc224ff3
+  e13123ac256583956decbfdafb521ebc
+  e56cde2d541f274fbee890ce32c386ce
+  f70f63def2543f77ff268579dd6ece12d0f7fc78
+  fee06670e4886dc33ebe0f7b609c2e77
+  (36 total matches)
+
+---------------------------------------------------------------
+### highest-value leads
+---------------------------------------------------------------
+  none - widen the search with MINLEN=4, or check reports/strings.txt by hand

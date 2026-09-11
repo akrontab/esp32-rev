@@ -119,6 +119,10 @@ workspace/<target>/
   NOTES.md    your findings
 ```
 
+A worked example ships in the repo: `workspace/badge-2025/` is a committed
+**demo** (the WWHF 2025 badge) - open its `reports/SUMMARY.md`, or re-run
+`[12]` on its `dumps/flash_full.bin`. Other workspaces stay git-ignored.
+
 Every artefact is SHA-256 hashed into `meta/artifacts.sha256` as it is
 produced, and every action appends a JSON line to `logs/actions.jsonl`. Menu
 option 19 re-verifies the hashes — worth doing before you trust a dump.

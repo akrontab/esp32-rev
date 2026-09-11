@@ -1,0 +1,24 @@
+NVS partition: nvs.bin (20480 bytes, 5 pages)
+namespaces: 1=phy, 2=bt_config.conf
+
+-- page 0  state=active  seq=0  version=0xFE
+   [written] <ns-table>       u8        phy              = 1
+   [written] phy              blob_data cal_data         = <1904 bytes -> extract/nvs_blobs/phy_cal_data_p00e001_written.bin>
+   [written] phy              blob_idx  cal_data         = {'total_size': 1904, 'chunk_count': 1, 'chunk_start': 0}
+   [written] phy              blob_data cal_mac          = ccba972b1b30
+   [written] phy              blob_idx  cal_mac          = {'total_size': 6, 'chunk_count': 1, 'chunk_start': 0}
+   [written] phy              u32       cal_version      = 640
+   [written] <ns-table>       u8        bt_config.conf   = 2
+   [erased ] bt_config.conf   blob_data bt_cfg_key0      =   ('')
+   [erased ] bt_config.conf   blob_idx  bt_cfg_key0      = {'total_size': 0, 'chunk_count': 1, 'chunk_start': 0}
+   [erased ] bt_config.conf   blob_data bt_cfg_key0      = <62 bytes -> extract/nvs_blobs/bt_config.conf_bt_cfg_key0_p00e070_erased.bin>
+   [erased ] bt_config.conf   blob_idx  bt_cfg_key0      = {'total_size': 62, 'chunk_count': 1, 'chunk_start': 128}
+   [erased ] bt_config.conf   blob_data bt_cfg_key0      = <113 bytes -> extract/nvs_blobs/bt_config.conf_bt_cfg_key0_p00e074_erased.bin>
+   [erased ] bt_config.conf   blob_idx  bt_cfg_key0      = {'total_size': 113, 'chunk_count': 1, 'chunk_start': 0}
+   [erased ] bt_config.conf   blob_data bt_cfg_key0      = <165 bytes -> extract/nvs_blobs/bt_config.conf_bt_cfg_key0_p00e080_erased.bin>
+   [erased ] bt_config.conf   blob_idx  bt_cfg_key0      = {'total_size': 165, 'chunk_count': 1, 'chunk_start': 128}
+   [written] bt_config.conf   blob_data bt_cfg_key0      = <216 bytes -> extract/nvs_blobs/bt_config.conf_bt_cfg_key0_p00e088_written.bin>
+   [written] bt_config.conf   blob_idx  bt_cfg_key0      = {'total_size': 216, 'chunk_count': 1, 'chunk_start': 0}
+
+totals: 9 written, 8 erased-but-readable
+NOTE: erased entries are stale values still on flash - check them.

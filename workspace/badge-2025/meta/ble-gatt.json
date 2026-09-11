@@ -1,0 +1,82 @@
+[
+  {
+    "uuid": "00001801-0000-1000-8000-00805f9b34fb",
+    "description": "Generic Attribute Profile",
+    "characteristics": [
+      {
+        "uuid": "00002a05-0000-1000-8000-00805f9b34fb",
+        "handle": 2,
+        "description": "Service Changed",
+        "properties": [
+          "indicate"
+        ]
+      }
+    ]
+  },
+  {
+    "uuid": "00001800-0000-1000-8000-00805f9b34fb",
+    "description": "Generic Access Profile",
+    "characteristics": [
+      {
+        "uuid": "00002a00-0000-1000-8000-00805f9b34fb",
+        "handle": 21,
+        "description": "Device Name",
+        "properties": [
+          "read"
+        ],
+        "value_hex": "424144474520424c45"
+      },
+      {
+        "uuid": "00002a01-0000-1000-8000-00805f9b34fb",
+        "handle": 23,
+        "description": "Appearance",
+        "properties": [
+          "read"
+        ],
+        "value_hex": "0000"
+      },
+      {
+        "uuid": "00002aa6-0000-1000-8000-00805f9b34fb",
+        "handle": 25,
+        "description": "Central Address Resolution",
+        "properties": [
+          "read"
+        ],
+        "value_hex": "00"
+      }
+    ]
+  },
+  {
+    "uuid": "5b1efd49-02d1-46b3-9e4d-e7385878a19d",
+    "description": "Unknown",
+    "characteristics": [
+      {
+        "uuid": "08834ffd-fc4e-4e7c-966b-11e6f6b1406e",
+        "handle": 41,
+        "description": "Unknown",
+        "properties": [
+          "read"
+        ],
+        "value_hex": "63646335623030303836323332306461393165346436366263333337393261616263323234666633"
+      },
+      {
+        "uuid": "79ff92fb-2276-4fec-ba79-c9b133e8c00e",
+        "handle": 43,
+        "description": "Unknown",
+        "properties": [
+          "read"
+        ],
+        "value_hex": "2d2d2d20437261636b207468652048617368202d2d2d"
+      },
+      {
+        "uuid": "7d10c989-0fe0-44bb-a65a-64963a9b8ab4",
+        "handle": 45,
+        "description": "Unknown",
+        "properties": [
+          "read"
+        ],
+        "value_hex": "66373066363364656632353433663737666632363835373964643665636531326430663766633738"
+      }
+    ]
+  }
+]

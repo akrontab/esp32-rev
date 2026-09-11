@@ -1,0 +1,320 @@
+# strings leads - reports/strings.txt
+# 10219 lines: 2227 signal, 5331 noise (52% noise filtered)
+#
+# noise filtered by category:
+#   format/panic         2662
+#   bluetooth-stack      1388
+#   esp-idf/driver       1069
+#   source-path           111
+#   freertos               92
+#   net-lib                 9
+
+## flag-format (3)
+  dumps/flash_full.bin: === WELCOME TO WWHF ===
+  dumps/flash_full.bin: BHISBIOS (C) 2008
+  dumps/flash_full.bin: Darwin BHIS-MacBook-P
+
+## credential (9)
+  dumps/flash_full.bin:   1. User tasks
+  dumps/flash_full.bin: 05 CST 2016; root:xnu
+  dumps/flash_full.bin: C:\> net user Admin
+  dumps/flash_full.bin: Full Name      Admin
+  dumps/flash_full.bin: User name      Admin
+  dumps/flash_full.bin: User's comment      
+  dumps/flash_full.bin: characteristic user description
+  dumps/flash_full.bin: root@bt# ./warvox.rb
+  dumps/flash_full.bin: root@kali# msfconsole
+
+## bacon-cipher (1)
+  dumps/flash_full.bin: abaab baaaa babba abbba baaba abbab
+
+## base64 (16)
+  dumps/flash_full.bin: # VXpJMWRtUXllR3hhUjJSc1NVZHNla2xJUW5aa01sWjVTVkU5UFE9PQ==
+  dumps/flash_full.bin: /builds/idf/crosstool-NG/.build/xtensa-esp32s3-elf/src/newlib/newlib/libc/stdlib/dtoa.c
+  dumps/flash_full.bin: /builds/idf/crosstool-NG/.build/xtensa-esp32s3-elf/src/newlib/newlib/libc/stdlib/gdtoa-gethex.c
+  dumps/flash_full.bin: /builds/idf/crosstool-NG/.build/xtensa-esp32s3-elf/src/newlib/newlib/libc/stdlib/mprec.c
+  dumps/flash_full.bin: BRRPLLHLHHFJFFDPPLJJFJFFDHDDB
+  dumps/flash_full.bin: INZHSIDPOZSXEIDTOBUWY3DFMQQG22LMNM======
+  dumps/flash_full.bin: QmlyZCBpbiAgdGhlICBoYW5k
+  dumps/flash_full.bin: RdFRdGRdJRdLRdMbdNbdORdPRdQRdRY
+  dumps/flash_full.bin: prvCheckItemFitsByteBuffer
+  dumps/flash_full.bin: prvNotifyQueueSetContainer
+  dumps/flash_full.bin: prvReceiveGenericFromISR
+  dumps/flash_full.bin: taskSelectHighestPriorityTaskSMP
+  dumps/flash_full.bin: vApplicationGetIdleTaskMemory
+  dumps/flash_full.bin: vRingbufferReturnItemFromISR
+  dumps/flash_full.bin: xRingbufferGetCurFreeSize
+  dumps/flash_full.bin: xRingbufferReceiveUpToFromISR
+
+## hash (6)
+  dumps/flash_full.bin: LE_LOCAL_KEY_DHK = fee06670e4886dc33ebe0f7b609c2e77
+  dumps/flash_full.bin: LE_LOCAL_KEY_ER = e13123ac256583956decbfdafb521ebc
+  dumps/flash_full.bin: LE_LOCAL_KEY_IR = e56cde2d541f274fbee890ce32c386ce
+  dumps/flash_full.bin: LE_LOCAL_KEY_IRK = 9565c30443f0bf288125996763f81734
+  dumps/flash_full.bin: cdc5b000862320da91e4d66bc33792aabc224ff3
+  dumps/flash_full.bin: f70f63def2543f77ff268579dd6ece12d0f7fc78
+
+## url/host (3)
+  dumps/flash_full.bin: # ssh root@10.2.2.2  
+  dumps/flash_full.bin: # sshnuke 10.2.2.2 -r
+  dumps/flash_full.bin: Conn to 10.2.2.2:ssh 
+
+## human-text (104)
+  dumps/flash_full.bin: AREA                 
+  dumps/flash_full.bin: All rights reserved. 
+  dumps/flash_full.bin: B! YQiayq
+  dumps/flash_full.bin: B0000000000000000                INF
+  dumps/flash_full.bin: BADGE BLE
+  dumps/flash_full.bin: BREAK instr 
+  dumps/flash_full.bin: BREAKN instr 
+  dumps/flash_full.bin: Balloc succeeded
+  dumps/flash_full.bin: Berror: pll_cal exceeds 2ms!!!
+  dumps/flash_full.bin: CCT_LOAD, 
+  dumps/flash_full.bin: CCT_STG1, 
+  dumps/flash_full.bin: CCT_STG2, 
+  dumps/flash_full.bin: CIPHER CHALLENGE
+  dumps/flash_full.bin: CODE  PRFX NUMBER    
+  dumps/flash_full.bin: COMM    BAS BASIC COM
+  dumps/flash_full.bin: COMMAND COM SYS   COM
+  dumps/flash_full.bin: CPU: ESP32-S3
+  dumps/flash_full.bin: Calculated checksum
+  dumps/flash_full.bin: Calculated hash
+  dumps/flash_full.bin: Client connected for too long
+  dumps/flash_full.bin: Client connected timer started
+  dumps/flash_full.bin: Client disconnected timer reset
+  dumps/flash_full.bin: Comment     L3tM31n!
+  dumps/flash_full.bin: Commodore-Amiga, Inc.
+  dumps/flash_full.bin: Copyright (C) 1985   
+  dumps/flash_full.bin: DEBUG   COM COMP  COM
+  dumps/flash_full.bin: DESERT WARFARE
+  dumps/flash_full.bin: DONKEY  BAS LINK  EXE
+  dumps/flash_full.bin: DebugIntr 
+  dumps/flash_full.bin: Double exception
+  dumps/flash_full.bin: Dump of assembler cod
+  dumps/flash_full.bin: ELF file SHA256: 
+  dumps/flash_full.bin: E_X86_64 x86_64
+  dumps/flash_full.bin: Expected hash
+  dumps/flash_full.bin: Exploit SSHv1 CRC32  
+  dumps/flash_full.bin: F1 to retry boot.    
+  dumps/flash_full.bin: F2 for setup utility.
+  dumps/flash_full.bin: F5 for diagnostics.  
+  dumps/flash_full.bin: FALKEN'S MAZE
+  dumps/flash_full.bin: Funcs table create fails
+  dumps/flash_full.bin: GLB THERMONUCLEAR WAR
+  dumps/flash_full.bin: Game List
+  dumps/flash_full.bin: Gwjfp ymj nhj
+  dumps/flash_full.bin: H4TL EIF not registered
+  dumps/flash_full.bin: HwBreakpoint 
+  dumps/flash_full.bin: Image checksum
+  dumps/flash_full.bin: Initializing keyboard sequence...
+  dumps/flash_full.bin: J!08A2J 2
+  dumps/flash_full.bin: Jan 24 2024
+  dumps/flash_full.bin: LB_TXIQ, 
+  dumps/flash_full.bin: MAIN  i5/OS Main Menu
+  dumps/flash_full.bin: MAN(1)    Manual Page
+  dumps/flash_full.bin: MSFT(R) Win NT(TM)
+  dumps/flash_full.bin: Mar  5 2024
+  dumps/flash_full.bin: No boot device found 
+  dumps/flash_full.bin: Ovgr gur ohyyrg
+  dumps/flash_full.bin: P    D  D P     1  1 
+  dumps/flash_full.bin: P    DDD  P    111111
+  dumps/flash_full.bin: P  P D  D P  P 11 11 
+  dumps/flash_full.bin: Press Ctrl+Alt+Del to
+  dumps/flash_full.bin: RB h3Q9gW
+  dumps/flash_full.bin: REENT malloc succeeded
+  dumps/flash_full.bin: RG h3QiyW
+  dumps/flash_full.bin: RXDC_CHAN_WIFI, 
+  dumps/flash_full.bin: RXDC_RFRX_BT, 
+  dumps/flash_full.bin: RXDC_RFRX_WIFI, 
+  dumps/flash_full.bin: RXDC_RXBB_WIFI, 
+  dumps/flash_full.bin: Re-entered core dump! Exception happened during core dump!
+  dumps/flash_full.bin: Select one:
+  dumps/flash_full.bin: Setting breakpoint at 0x
+  dumps/flash_full.bin: SingleStep 
+  dumps/flash_full.bin: Speed: 240MHz
+  dumps/flash_full.bin: Sun 01-Apr-90 03:11  
+  dumps/flash_full.bin: Sys open: Level (9)  
+  dumps/flash_full.bin: Tasks currently running:
+  dumps/flash_full.bin: The IBM PC DOS       
+  dumps/flash_full.bin: The Oregon Trail
+  dumps/flash_full.bin: Unhandled kernel exception
+  dumps/flash_full.bin: Use DATE to set date 
+  dumps/flash_full.bin: VHCI: Controller is not run
+  dumps/flash_full.bin: Ver 1.10 (C)IBM 1981 
+  dumps/flash_full.bin: Watchpoint 0 triggered 
+  dumps/flash_full.bin: ZZZZ/  OOO  SSSS    
+  dumps/flash_full.bin: basic_string::_M_construct null not valid
+  dumps/flash_full.bin: basic_string::_S_construct null not valid
+  dumps/flash_full.bin: calculated peer commitment
+  dumps/flash_full.bin: coexist adapter function is NULL
+  dumps/flash_full.bin: e for function main: 
+  dumps/flash_full.bin: findItem(nsIndex, datatype, key, findPage, item)
+  dumps/flash_full.bin: jUPPt !AV
+  dumps/flash_full.bin: local OOB randomizer
+  dumps/flash_full.bin: nRF BLE Initialized
+  dumps/flash_full.bin: on 1 opened
+  dumps/flash_full.bin: p    D  D P     1  1 
+  dumps/flash_full.bin: p  p D  D P  P  1  1 
+  dumps/flash_full.bin: peer OOB randomizer
+  dumps/flash_full.bin: received peer commitment
+  dumps/flash_full.bin: ro.local 15.4.0 Darwi
+  dumps/flash_full.bin: try_heap_caps_add_region(mem_start, mem_end)
+  dumps/flash_full.bin: ver community priv RW
+  dumps/flash_full.bin: ver community pub RO 
+  dumps/flash_full.bin: wifi_cal_atten, 
+  dumps/flash_full.bin: wifi_pwctrl_atten, 
+  dumps/flash_full.bin: z/OS Z110 Level 8415 
+
+## other (2085)
+  dumps/flash_full.bin: 	  t00t@@tPPt
+  dumps/flash_full.bin: 	  t00t@@tPPt``tppt
+  dumps/flash_full.bin: 	)AIQ"
+  dumps/flash_full.bin: 	08A2J
+  dumps/flash_full.bin: 	@K	P[	`k	p{	
+  dumps/flash_full.bin: 	B-|	B3|	B3|	B3|	B3|	B3|	B3|	B3|	B3|	B3|	B
+  dumps/flash_full.bin: 	B0000000000000000                
+  dumps/flash_full.bin: 	B0000000000000000                Infinity
+  dumps/flash_full.bin: 	B<e	B
+  dumps/flash_full.bin: 	BBT_LOG
+  dumps/flash_full.bin: 	BL@	BL@	B
+  dumps/flash_full.bin: 	BL@	BL@	BL@	BU
+  dumps/flash_full.bin: 	B^y	B
+  dumps/flash_full.bin: 	B^y	B0000000000000000                
+  dumps/flash_full.bin: 	Bh7	BL@	BL@	B
+  dumps/flash_full.bin: 	Bn|	B
+  dumps/flash_full.bin: 	K"K3F
+  dumps/flash_full.bin:  	BL@	B
+  dumps/flash_full.bin:          (((((                  
+  dumps/flash_full.bin:          / OOO   SSS
+  dumps/flash_full.bin:          ||  WW||
+  dumps/flash_full.bin:         -----        
+  dumps/flash_full.bin:         / O   O S   
+  dumps/flash_full.bin:         \ ____  |  *
+  dumps/flash_full.bin:       /       \      
+  dumps/flash_full.bin:       \       /      
+  dumps/flash_full.bin:       c (dir)
+  dumps/flash_full.bin:      |    ^    |     
+  dumps/flash_full.bin:      |   ---   |     
+  dumps/flash_full.bin:      |  0   0  |     
+  dumps/flash_full.bin:      | \     / |     
+  dumps/flash_full.bin:     AND PREFIXES     
+  dumps/flash_full.bin:     App Dev System   
+  dumps/flash_full.bin:     o_o\  MSF   | \
+  dumps/flash_full.bin:    // / O   O    S  
+  dumps/flash_full.bin:    \ _ /        |\
+  dumps/flash_full.bin:    t00t@@t
+  dumps/flash_full.bin:   ( "a
+  dumps/flash_full.bin:   11. iSeries Access
+  dumps/flash_full.bin:   90. Sign off
+  dumps/flash_full.bin:   << back | track 5
+  dumps/flash_full.bin:   R e%
+  dumps/flash_full.bin:   TONES, PLEASE LIST 
+  dumps/flash_full.bin:   ZZZZ / O   O SSS  
+  dumps/flash_full.bin:   ` 04
+  dumps/flash_full.bin:   `)X"
+  dumps/flash_full.bin:   ence manuals
+  dumps/flash_full.bin:   man - an interface
+  dumps/flash_full.bin:   man [man options] [[
+  dumps/flash_full.bin:   t"aD!
+  dumps/flash_full.bin:   t"aQ@@
+  dumps/flash_full.bin:   t&B 
+  dumps/flash_full.bin:   t00t
+  dumps/flash_full.bin:   t00t0
+  dumps/flash_full.bin:   t00t@
+  dumps/flash_full.bin:   t00t@@
+  dumps/flash_full.bin:   t00t@@t
+  dumps/flash_full.bin:   t00t@@tPPt``t
+  dumps/flash_full.bin:   t00tA
+  dumps/flash_full.bin:   t00tM
+  dumps/flash_full.bin:   t00tPPta
+  dumps/flash_full.bin:   t00tm
+  dumps/flash_full.bin:   t78)1
+  dumps/flash_full.bin:   t8aI
+  dumps/flash_full.bin:   t:22D
+  dumps/flash_full.bin:   t@@t
+  dumps/flash_full.bin:   t@@t0c V#
+  dumps/flash_full.bin:   t@@t@
+  dumps/flash_full.bin:   t@@tPP
+  dumps/flash_full.bin:   t@@tPPt=
+  dumps/flash_full.bin:   t@@tPPt``t}
+  dumps/flash_full.bin:   t@@tPPtm
+  dumps/flash_full.bin:   t@@tV
+  dumps/flash_full.bin:   t@@tm
+  dumps/flash_full.bin:   tPPt
+  dumps/flash_full.bin:   tPPt``tppt
+  dumps/flash_full.bin:   tPPtm
+  dumps/flash_full.bin:   t`V H
+  dumps/flash_full.bin:   t``t
+  dumps/flash_full.bin:   tf"h
+  dumps/flash_full.bin:   to the system refer
+  dumps/flash_full.bin:   tppt
+  dumps/flash_full.bin:   u00tf
+  dumps/flash_full.bin:  !A00tV2
+  dumps/flash_full.bin:  !A941
+  dumps/flash_full.bin:  ""&B*'%
+  dumps/flash_full.bin:  "A:RA;%
+  dumps/flash_full.bin:  "d7"$7'3
+  dumps/flash_full.bin:  # "dH
+  dumps/flash_full.bin:  # "fHa
+  dumps/flash_full.bin:  #A #0`"
+  dumps/flash_full.bin:  $   4
+  dumps/flash_full.bin:  $  #   
+  dumps/flash_full.bin:  $ "cH
+  dumps/flash_full.bin:  $ "cH"
+  dumps/flash_full.bin:  &#"&3&&
+  dumps/flash_full.bin:  '   tV2
+  dumps/flash_full.bin:  ( %4I
+  dumps/flash_full.bin:  (0  t
+  dumps/flash_full.bin:  (A08A
+  dumps/flash_full.bin:  (A08A@HA
+  dumps/flash_full.bin:  (A`hA
+  dumps/flash_full.bin:  (invalid mmu entry)
+  dumps/flash_full.bin:  * 08 
+  dumps/flash_full.bin:  *0  t
+  dumps/flash_full.bin:  *0  t  `F
+  dumps/flash_full.bin:  *0  t7
+  dumps/flash_full.bin:  +0  t
+  dumps/flash_full.bin:  ,   tV
+  dumps/flash_full.bin:  /       \
+  dumps/flash_full.bin:  //  / O   O    S   
+  dumps/flash_full.bin:  01A`c
+  dumps/flash_full.bin:  01Ajc
+  dumps/flash_full.bin:  0@tW4M
+  dumps/flash_full.bin:  4  300
+  dumps/flash_full.bin:  84@30@
+  dumps/flash_full.bin:  @" "J
+  dumps/flash_full.bin:  @t!!SR
+  dumps/flash_full.bin:  B %)K
+  dumps/flash_full.bin:  B 0# 
+  dumps/flash_full.bin:  BAJRAK
+  dumps/flash_full.bin:  DESIRED AREA CODES  
+  dumps/flash_full.bin:  I'I7IgI
+  dumps/flash_full.bin:  IAIQIae
+  dumps/flash_full.bin:  P t@@t``t
+  dumps/flash_full.bin:  PPtP3
+  dumps/flash_full.bin:  Pt@ t
+  dumps/flash_full.bin:  Pt@@t
+  dumps/flash_full.bin:  Pt` ta
+  dumps/flash_full.bin:  R @@t"
+  dumps/flash_full.bin:  Rb7""7
+  dumps/flash_full.bin:  TO SCAN FOR CARRIER 
+  dumps/flash_full.bin:  TT|T|
+  dumps/flash_full.bin:  U Hq(a
+  dumps/flash_full.bin:  `t00t
+  dumps/flash_full.bin:  and returning...
+  dumps/flash_full.bin:  b !AF
+  dumps/flash_full.bin:  e^G+DW
+  dumps/flash_full.bin:  f bUQ
+  dumps/flash_full.bin:  f0``t
+  dumps/flash_full.bin:  has been detected.
+  dumps/flash_full.bin:  ke_task.c
+  dumps/flash_full.bin:  on core 
+  dumps/flash_full.bin:  pG b"F
+  dumps/flash_full.bin:  panic'ed (
+  dumps/flash_full.bin:  pt``t@@
+  dumps/flash_full.bin:  rE12E2bU
+  dumps/flash_full.bin:  u"EV!
+  dumps/flash_full.bin:  was running in ISR context:
+  dumps/flash_full.bin:  {} 0 0 {}______
+  ... and 1935 more
+

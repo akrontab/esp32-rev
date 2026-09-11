@@ -1,0 +1,15 @@
+#    label            type  subtype   offset     size       size_kb   flags
+----------------------------------------------------------------------------------------
+0    nvs              data  nvs       0x00009000 0x00005000 20        
+1    otadata          data  otadata   0x0000e000 0x00002000 8         
+2    app0             app   ota_0     0x00010000 0x00330000 3264      
+3    app1             app   ota_1     0x00340000 0x00330000 3264      
+4    spiffs           data  spiffs    0x00670000 0x00180000 1536      
+5    coredump         data  coredump  0x007f0000 0x00010000 64        
+
+highest partition end: 0x00800000 (8192 KiB) - flash must be at least this big
+table md5: 467eb896e29d1aa938c557f4cdfc4c5b
+
+carve candidates:
+  nvs              nvs       0x00009000 +0x5000
+  spiffs           spiffs    0x00670000 +0x180000

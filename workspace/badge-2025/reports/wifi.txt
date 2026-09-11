@@ -1,0 +1,11 @@
+WiFi capability report
+========================================
+
+## Stored WiFi config (from NVS)
+  none found (badge may not store WiFi creds, or uses no station mode)
+
+## WiFi features used by the firmware
+  [x] ESP-NOW (peer-to-peer)             (20 references)
+  [x] HTTP server                        (18 references)
+  [x] SmartConfig provisioning           (2 references)
+

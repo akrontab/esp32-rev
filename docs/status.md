@@ -28,6 +28,11 @@ Host-side (venv): BLE + WiFi (can't be containerised on Docker Desktop).
 
 ## The reference badge (workspace/badge-2025)
 
+_Committed as a demo workspace_ (dump + reports; the derivable `parts/` and
+the ambient WiFi scan are excluded). Clone and open `reports/SUMMARY.md`, or
+re-run `[12]` on `dumps/flash_full.bin` to regenerate everything.
+
+
 - **ESP32-S3** (QFN56, rev v0.2), **8 MB** flash, MAC cc:ba:97:2b:1b:30.
 - **Unlocked**: no secure boot, no flash encryption, JTAG on. Plain dump works.
 - Arduino core on **ESP-IDF v4.4.7**, built Mar 2024.

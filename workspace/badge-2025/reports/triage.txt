@@ -1,0 +1,80 @@
+---------------------------------------------------------------
+TRIAGE  flash_full.bin  run 20260908T163206Z
+---------------------------------------------------------------
+
+### file
+  size: 8388608 bytes
+  sha256: dea3920e7ed124b6c8700fbcdec78c3df0ae5ae5881ade1bb784862764bbedff
+  type: DOS executable (COM), start instruction 0xe903023f d0983c40
+
+### entropy map (64 KiB blocks)
+  0x000000  :**+###%%%%%#%%*                                                
+  0x400000                                                                  
+
+  legend: ' '=empty  '.'=low  '@'=maximum (encrypted/compressed)
+  0 of 128 blocks are high entropy
+
+### partition table
+  #    label            type  subtype   offset     size       size_kb   flags
+  ----------------------------------------------------------------------------------------
+  0    nvs              data  nvs       0x00009000 0x00005000 20        
+  1    otadata          data  otadata   0x0000e000 0x00002000 8         
+  2    app0             app   ota_0     0x00010000 0x00330000 3264      
+  3    app1             app   ota_1     0x00340000 0x00330000 3264      
+  4    spiffs           data  spiffs    0x00670000 0x00180000 1536      
+  5    coredump         data  coredump  0x007f0000 0x00010000 64        
+  
+  highest partition end: 0x00800000 (8192 KiB) - flash must be at least this big
+  table md5: 467eb896e29d1aa938c557f4cdfc4c5b
+  
+  carve candidates:
+    nvs              nvs       0x00009000 +0x5000
+    spiffs           spiffs    0x00670000 +0x180000
+  
+  [+] wrote reports/partitions.txt and meta/partitions.json
+
+### ESP images found
+  0x00000000  ESP32-S3    3 segments  entry 0x403c98d0  flash 8MB/DIO/80MHz
+      seg0 load=0x3fce3808 len=0x4bc    entropy=5.37
+      seg1 load=0x403c9700 len=0xbd8    entropy=6.41
+      seg2 load=0x403cc700 len=0x2a0c   entropy=6.76
+  0x00010000  ESP32-S3    5 segments  entry 0x40377530  flash 8MB/DIO/80MHz
+      project 'arduino-lib-builder'  version 'esp-idf: v4.4.7 38eeba213a'  idf v4.4.7-dirty  built Mar  5 2024 12:12:53
+      seg0 load=0x3c0b0020 len=0x30a54  entropy=5.65
+      seg1 load=0x3fc97290 len=0x4d1c   entropy=4.46
+      seg2 load=0x40374000 len=0xa878   entropy=6.94
+      seg3 load=0x42000020 len=0xa224c  entropy=7.21
+      seg4 load=0x4037e878 len=0x8a0c   entropy=7.03
+
+### binwalk signatures
+  
+  DECIMAL       HEXADECIMAL     DESCRIPTION
+  --------------------------------------------------------------------------------
+  67931         0x1095B         Copyright string: "Copyright (C) 1985   "
+  69452         0x10F4C         Unix path: /home/printadmin/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src/Wire.cpp
+  73150         0x11DBE         Unix path: /home/printadmin/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src/BLEAdvertising.cpp
+  73590         0x11F76         Unix path: /home/printadmin/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src/BLECharacteristic.cpp
+  74104         0x12178         Unix path: /home/printadmin/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src/BLEDescriptor.cpp
+  74353         0x12271         Unix path: /home/printadmin/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src/BLEDevice.cpp
+  74896         0x12490         Unix path: /home/printadmin/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src/BLEScan.cpp
+  75332         0x12644         Unix path: /home/printadmin/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src/BLEService.cpp
+  75866         0x1285A         Unix path: /home/printadmin/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src/BLEUUID.cpp
+  76207         0x129AF         Unix path: /home/printadmin/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src/BLEUtils.cpp
+  76404         0x12A74         Unix path: /home/printadmin/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src/FreeRTOS.cpp
+  76608         0x12B40         Unix path: /home/printadmin/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src/BLEAdvertisedDevice.cpp
+  76978         0x12CB2         Unix path: /home/printadmin/.platformio/packages/framework-arduinoespressif32/libraries/BLE/src/BLEClient.cpp
+  77596         0x12F1C         Unix path: /home/printadmin/.platformio/packages/framework-arduinoespressif32/cores/esp32/HWCDC.cpp
+  78002         0x130B2         Unix path: /home/printadmin/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-adc.c
+  78469         0x13285         Unix path: /home/printadmin/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-bt.c
+  78712         0x13378         Unix path: /home/printadmin/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-gpio.c
+  78906         0x1343A         Unix path: /home/printadmin/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-i2c-slave.c
+  79188         0x13554         Unix path: /home/printadmin/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-i2c.c
+  79518         0x1369E         Unix path: /home/printadmin/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-ledc.c
+  79771         0x1379B         Unix path: /home/printadmin/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-misc.c
+  80206         0x1394E         Unix path: /home/printadmin/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-rgb-led.c
+  80381         0x139FD         Unix path: /home/printadmin/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-rmt.c
+  80843         0x13BCB         Unix path: /home/printadmin/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal-cpu.c
+  180648        0x2C1A8         AES S-Box
+  212360        0x33D88         AES S-Box
+  225692        0x3719C         Unix path: /home/printadmin/.platformio/packages/framework-arduinoespressif32/libraries/SPI/src/SPI.cpp
+  

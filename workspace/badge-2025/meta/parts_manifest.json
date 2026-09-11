@@ -1,0 +1,56 @@
+[
+  {
+    "label": "nvs",
+    "file": "parts/nvs.bin",
+    "subtype": "nvs",
+    "offset": 36864,
+    "size": 20480,
+    "bytes_written": 20480,
+    "classification": "NVS key/value store"
+  },
+  {
+    "label": "otadata",
+    "file": "parts/otadata.bin",
+    "subtype": "otadata",
+    "offset": 57344,
+    "size": 8192,
+    "bytes_written": 8192,
+    "classification": "unrecognised (entropy 0.02)"
+  },
+  {
+    "label": "app0",
+    "file": "parts/app0.bin",
+    "subtype": "ota_0",
+    "offset": 65536,
+    "size": 3342336,
+    "bytes_written": 3342336,
+    "classification": "ESP image, 5 segments, ESP32-S3 'arduino-lib-builder' vesp-idf: v4.4.7 38eeba213a idf=v4.4.7-dirty"
+  },
+  {
+    "label": "app1",
+    "file": "parts/app1.bin",
+    "subtype": "ota_1",
+    "offset": 3407872,
+    "size": 3342336,
+    "bytes_written": 3342336,
+    "classification": "blank (erased or zeroed)"
+  },
+  {
+    "label": "spiffs",
+    "file": "parts/spiffs.bin",
+    "subtype": "spiffs",
+    "offset": 6750208,
+    "size": 1572864,
+    "bytes_written": 1572864,
+    "classification": "blank (erased or zeroed)"
+  },
+  {
+    "label": "coredump",
+    "file": "parts/coredump.bin",
+    "subtype": "coredump",
+    "offset": 8323072,
+    "size": 65536,
+    "bytes_written": 65536,
+    "classification": "blank (erased or zeroed)"
+  }
+]

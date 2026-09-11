@@ -1,0 +1,9 @@
+{
+  "config": [],
+  "capabilities": {
+    "ESP-NOW (peer-to-peer)": 20,
+    "SmartConfig provisioning": 2,
+    "HTTP server": 18
+  },
+  "ssid_candidates": []
+}

@@ -1,0 +1,168 @@
+{
+  "nvs": [
+    {
+      "state": "written",
+      "namespace": "<ns-table>",
+      "key": "phy",
+      "type": "u8",
+      "value": 1,
+      "page": 0
+    },
+    {
+      "state": "written",
+      "namespace": "phy",
+      "key": "cal_data",
+      "type": "blob_data",
+      "value": "<1904 bytes -> extract/nvs_blobs/phy_cal_data_p00e001_written.bin>",
+      "page": 0
+    },
+    {
+      "state": "written",
+      "namespace": "phy",
+      "key": "cal_data",
+      "type": "blob_idx",
+      "value": {
+        "total_size": 1904,
+        "chunk_count": 1,
+        "chunk_start": 0
+      },
+      "page": 0
+    },
+    {
+      "state": "written",
+      "namespace": "phy",
+      "key": "cal_mac",
+      "type": "blob_data",
+      "value": "ccba972b1b30",
+      "page": 0
+    },
+    {
+      "state": "written",
+      "namespace": "phy",
+      "key": "cal_mac",
+      "type": "blob_idx",
+      "value": {
+        "total_size": 6,
+        "chunk_count": 1,
+        "chunk_start": 0
+      },
+      "page": 0
+    },
+    {
+      "state": "written",
+      "namespace": "phy",
+      "key": "cal_version",
+      "type": "u32",
+      "value": 640,
+      "page": 0
+    },
+    {
+      "state": "written",
+      "namespace": "<ns-table>",
+      "key": "bt_config.conf",
+      "type": "u8",
+      "value": 2,
+      "page": 0
+    },
+    {
+      "state": "erased",
+      "namespace": "bt_config.conf",
+      "key": "bt_cfg_key0",
+      "type": "blob_data",
+      "value": "  ('')",
+      "page": 0
+    },
+    {
+      "state": "erased",
+      "namespace": "bt_config.conf",
+      "key": "bt_cfg_key0",
+      "type": "blob_idx",
+      "value": {
+        "total_size": 0,
+        "chunk_count": 1,
+        "chunk_start": 0
+      },
+      "page": 0
+    },
+    {
+      "state": "erased",
+      "namespace": "bt_config.conf",
+      "key": "bt_cfg_key0",
+      "type": "blob_data",
+      "value": "<62 bytes -> extract/nvs_blobs/bt_config.conf_bt_cfg_key0_p00e070_erased.bin>",
+      "page": 0
+    },
+    {
+      "state": "erased",
+      "namespace": "bt_config.conf",
+      "key": "bt_cfg_key0",
+      "type": "blob_idx",
+      "value": {
+        "total_size": 62,
+        "chunk_count": 1,
+        "chunk_start": 128
+      },
+      "page": 0
+    },
+    {
+      "state": "erased",
+      "namespace": "bt_config.conf",
+      "key": "bt_cfg_key0",
+      "type": "blob_data",
+      "value": "<113 bytes -> extract/nvs_blobs/bt_config.conf_bt_cfg_key0_p00e074_erased.bin>",
+      "page": 0
+    },
+    {
+      "state": "erased",
+      "namespace": "bt_config.conf",
+      "key": "bt_cfg_key0",
+      "type": "blob_idx",
+      "value": {
+        "total_size": 113,
+        "chunk_count": 1,
+        "chunk_start": 0
+      },
+      "page": 0
+    },
+    {
+      "state": "erased",
+      "namespace": "bt_config.conf",
+      "key": "bt_cfg_key0",
+      "type": "blob_data",
+      "value": "<165 bytes -> extract/nvs_blobs/bt_config.conf_bt_cfg_key0_p00e080_erased.bin>",
+      "page": 0
+    },
+    {
+      "state": "erased",
+      "namespace": "bt_config.conf",
+      "key": "bt_cfg_key0",
+      "type": "blob_idx",
+      "value": {
+        "total_size": 165,
+        "chunk_count": 1,
+        "chunk_start": 128
+      },
+      "page": 0
+    },
+    {
+      "state": "written",
+      "namespace": "bt_config.conf",
+      "key": "bt_cfg_key0",
+      "type": "blob_data",
+      "value": "<216 bytes -> extract/nvs_blobs/bt_config.conf_bt_cfg_key0_p00e088_written.bin>",
+      "page": 0
+    },
+    {
+      "state": "written",
+      "namespace": "bt_config.conf",
+      "key": "bt_cfg_key0",
+      "type": "blob_idx",
+      "value": {
+        "total_size": 216,
+        "chunk_count": 1,
+        "chunk_start": 0
+      },
+      "page": 0
+    }
+  ]
+}
