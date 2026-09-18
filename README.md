@@ -253,7 +253,7 @@ base64 blobs, JWTs, MAC addresses, and 32–64 char hex (hashes and keys).
    erased-but-readable entries — those are stale values still on flash.
 4. **Consider that it is assembled at runtime.** If nothing is stored as a
    plain string, no pattern will find it; that is the point at which
-   disassembly (`[33]`/`[34]`, [docs/ghidra.md](docs/ghidra.md)) or driving the
+   disassembly (`[33]`/`[34]`/`[36]`, [docs/ghidra.md](docs/ghidra.md)) or driving the
    badge's own UI while capturing the console (`[8]`) becomes the cheaper path.
 
 ---

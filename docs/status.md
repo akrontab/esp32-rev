@@ -6,7 +6,9 @@ _Last updated: 2026-09-10. A living "where we are" so any session can resume._
 
 A containerised ESP32 badge RE toolkit driven by one PowerShell control plane
 (`scripts/badge.ps1`), validated end-to-end on a real 2025 conference badge.
-Everything read-only toward the badge.
+Read-only toward the badge, with one deliberate, labelled exception: the
+interactive console `[24]` sends input to drive the running firmware (it never
+writes flash/eFuses — see [decisions.md](decisions.md) D17).
 
 ## What's built and validated
 
@@ -15,12 +17,15 @@ Everything read-only toward the badge.
 | Setup: quick start, one-key attach | `0`, `a` | done |
 | Full run: acquire + analyse → SUMMARY.md | `R` | done |
 | Serial acquisition (chip/eFuses/parts/dump) | `5`–`11` | validated on hardware |
+| Interactive two-way console (drives badge menus/CLI) | `24` | built (needs hardware to validate) |
 | Offline analysis (triage/split/fs/nvs/hunt) | `12`–`17` | validated |
 | Strings triage: signal vs noise buckets | `35` | validated (fw-leads) |
 | BLE recon (scan / GATT dump / notify) | `25`–`27` | validated (host-side venv) |
 | WiFi recon (capabilities / SoftAP scan) | `31`, `32` | validated |
 | Hash cracking (local GPU) | `29`, `30` | validated (cracked the badge's SHA-1s) |
 | Disassembly (Ghidra headless + GUI) | `33`, `34` | validated (4,672 fns) |
+| Full-dump disassembly (bootloader + all app slots) | `36` | validated (inventory on badge dump) |
+| Decompilation triage → ranked `code-leads.txt` | auto after `33`/`36` | validated (ranking logic) |
 | Workspace: reports / verify / summary | `18`–`20` | done |
 
 Container images: `esp32-re/esptool`, `/analysis`, `/hashcat`, `/ghidra`.

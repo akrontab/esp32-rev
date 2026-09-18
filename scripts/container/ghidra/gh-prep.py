@@ -18,7 +18,9 @@ import sys
 import espfmt
 
 WORK = os.environ.get("WORK", "/work")
-OUT = os.path.join(WORK, "reports", "ghidra")
+# GHIDRA_OUT lets gh-dump.sh redirect one image's artefacts into its own
+# subdir (reports/ghidra/<image>/); unset, it's the shared reports/ghidra.
+OUT = os.environ.get("GHIDRA_OUT") or os.path.join(WORK, "reports", "ghidra")
 
 # Ghidra 12 ships these natively. Xtensa covers the classic ESP32 + S2/S3;
 # RISC-V covers C3/C6/H2. Exact ids verified against the installed Ghidra.

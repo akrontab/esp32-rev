@@ -229,6 +229,73 @@ monitor-mode are attack, need dedicated hardware + Linux, and are deferred
 
 ---
 
+## D16 — Full-dump Ghidra analysis reuses the app-image pipeline per image
+
+**Decision.** `[36]` (`gh-dump.sh`) analyses a whole flash dump by
+*inventorying* the code images in it (`gh-images.py` → `images.json`), carving
+each loadable one out as a standalone image, and running the existing,
+validated `[33]` pipeline (`gh-prep` → `analyzeHeadless` → `ExportArtifacts`)
+over each — into a per-image subdir (`reports/ghidra/<image>/`). Bootloader is
+located at its chip-specific offset; app slots come from the partition table;
+blank/encrypted/headerless candidates are listed and skipped, not analysed.
+
+**Why.** The single-image path is already proven on hardware. Rather than
+parallel it with a new bulk loader, `[36]` carves each image so the *same*
+segment-accurate load runs unchanged — the only new logic is enumeration and
+carving, both driven by the already-validated `espfmt` parsers. This adds the
+**bootloader** (previously invisible — `[33]` only ever saw `app0`) and every
+populated OTA slot as analysis targets, keeping `[33]` byte-for-byte the same
+(output redirection is an opt-in `GHIDRA_OUT` env var, unset for `[33]`).
+
+---
+
+## D17 — The interactive console `[24]` is the one write toward the badge
+
+**Decision.** `[24]` (`esp-console.py`) is a two-way serial terminal: it sends
+what the operator types to the badge. Every other capability in the toolkit is
+strictly read-only toward the badge; this one is the deliberate exception, and
+it is labelled as such in the menu ("two-way; sends input") rather than filed
+under the read-only HARDWARE header. It runs char-at-a-time in raw mode so
+single-key menus and REPLs work and control keys (Ctrl-C/Ctrl-Z) reach the
+firmware rather than the host; it exits on Ctrl-] without resetting, and logs
+the received stream to `logs/console-*.log`. Keystrokes are not logged verbatim
+(they can carry secrets; the badge's own echo already appears in the log).
+
+**Why.** A large class of badge challenges lives behind an interactive serial
+menu or a command you must discover and feed — unreachable by capture alone
+(`[8]`). Sending console input drives the *running firmware*; it does not write
+flash, eFuses, or any persistent state, so it does not compromise the integrity
+of the dump the rest of the analysis relies on. That is a meaningfully smaller
+step than flashing or fusing, but it is not nothing, so it is called out
+explicitly instead of being presented as read-only. It reuses the same
+container + `--device` + `-it` path as `[8]`, so a docker-provided pty gives
+raw-mode stdin; the default line ending is `\n`, with `cr`/`crlf` offered
+because a mismatched EOL is the usual reason a badge appears to ignore input.
+
+---
+
+## D18 — Decompilation triage is a post-export text pass, not an in-Ghidra script
+
+**Decision.** `gh-leads.py` ranks functions *after* the headless run, reading
+the emitted `decompiled.c`/`functions.txt` (plus `meta/leads.json`), rather than
+walking the program model from inside `analyzeHeadless`. It runs automatically
+at the end of `gh-analyze.sh`, so both `[33]` and every image of `[36]` produce
+a `code-leads.txt`.
+
+**Why.** An in-Ghidra postScript could use precise cross-references and the call
+graph, but it can only be exercised by building the image and running a
+multi-minute pass — untestable in isolation, and version-sensitive against the
+Ghidra API. The text pass mirrors the established `fw-leads` pattern, runs in a
+second, degrades gracefully when an input is missing, and — because Ghidra
+already inlines string references into the decompilation — keeps the single
+highest-value signal: linking a function to the flag token / credential / hash
+the toolkit already found. Its ranking was validated on synthesised
+decompilation (a `strcmp`-against-`L3tM31n!` check ranks top; a memcpy wrapper
+and an SDK function score zero). A precise xref version remains a possible
+upgrade if the heuristics prove too coarse on a real badge.
+
+---
+
 ## Validation
 
 The format parsers were checked against ground truth from Espressif's own
@@ -238,6 +305,8 @@ tooling rather than assumed correct.
 | ------------------------ | ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
 | `espfmt` image parsing   | A synthesised ESP32 image read back by `esptool image-info` | Entry point, segment table, flash mode/size/freq, checksum, validation hash and app descriptor all agree |
 | `espfmt` partition table | Hand-built table with MD5 entry                             | All five partitions and the MD5 recovered                                                                |
+| `gh-images` full-dump inventory | The committed 2025 badge dump (`workspace/badge-2025`) | Found bootloader @0x0 (S3) + app0 (`arduino-lib-builder`, IDF v4.4.7-dirty) as loadable; app1 correctly skipped as blank. Carved images re-parse with `checksum_ok`. |
+| `gh-leads` decompilation ranking | Synthesised `decompiled.c` + `functions.txt` + `meta/leads.json` | A `strcmp`-vs-`L3tM31n!` check ranks #1 (found-lead + comparison + keywords); crypto-const and XOR-cipher functions follow; memcpy wrapper and an SDK function score zero and are dropped. |
 | `nvsfmt`                 | Partition built by `esp-idf-nvs-partition-gen` from a CSV   | Namespaces resolved; string, u8, u32, blob-data and blob-index entries all decoded correctly             |
 | `spiffsfmt`              | Image built by ESP-IDF's `spiffsgen.py` (v5.2.1)            | All 4 files extracted **byte-identical**, including a 10 KiB multi-page file and a nested path           |
 

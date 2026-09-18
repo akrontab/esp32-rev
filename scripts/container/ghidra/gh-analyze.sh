@@ -9,7 +9,10 @@
 
 set -euo pipefail
 WORK="${WORK:-/work}"
-OUT="$WORK/reports/ghidra"
+# GHIDRA_OUT lets gh-dump.sh point one image's artefacts at its own subdir;
+# unset, it's the shared reports/ghidra (the [33] default). gh-prep.py reads
+# the same variable, so the segment files and the manifest stay together.
+OUT="${GHIDRA_OUT:-$WORK/reports/ghidra}"
 SCRIPTS=/opt/re/bin
 IMG="${1:-$WORK/parts/app0.bin}"
 
@@ -57,6 +60,9 @@ if [ -f "$OUT/decompiled.c" ]; then
   echo "    reports/ghidra/symbols.txt         symbol table"
   echo "    reports/ghidra/strings-ghidra.txt  defined strings with addresses"
   wc -l "$OUT/functions.txt" 2>/dev/null | awk '{print "    ("$1" functions)"}'
+  echo
+  echo "[*] Triaging the decompilation into a ranked shortlist"
+  gh-leads.py "$OUT" || echo "[!] lead triage skipped (see above)"
 else
   echo "[!] No decompiled.c produced - check the headless output above."
   echo "    If the image is encrypted, disassembly is not meaningful."

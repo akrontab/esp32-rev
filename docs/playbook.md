@@ -106,6 +106,23 @@ console output frequently answers questions that would take an hour of static
 analysis — and on badges with an interactive console, it reveals the command
 set.
 
+**When the badge talks back, use `[24]`.** `[8]` only listens; `[24]` is a
+two-way terminal — badge output is shown and logged (`logs/console-*.log`),
+and what you type is sent straight to it. It runs char-at-a-time, so single-key
+menus and REPLs work, not just line commands. This is the tool for the class of
+challenge that hides behind a serial menu or a command you have to find and
+feed the right input (`help`, an unlock word, a level password). Notes:
+
+- **Line ending.** Enter sends `\n` by default; if the badge ignores your
+  commands, re-run and choose `cr` or `crlf` — a mismatched EOL is the usual
+  reason input seems dead.
+- **No echo?** If you can't see what you type, enable local echo. Many badge
+  consoles echo for you, so leave it off first.
+- **Exit with Ctrl-]** — it closes the terminal without resetting the badge.
+- It *sends input*, so unlike everything else in the toolkit it is not strictly
+  read-only toward the badge; it does not touch flash, but it does drive the
+  running firmware (see [decisions.md](decisions.md#d17--the-interactive-console-24-is-the-one-write-toward-the-badge)).
+
 ---
 
 ## Phase 4 — analyse (offline; unplug the badge)
@@ -131,8 +148,10 @@ Read `reports/SUMMARY.md` first (the one-page brief), then `reports/leads.txt`
 2. **A filesystem partition** — `extract/`. Web assets, config JSON, text.
 3. **Plain strings in the app image** — `reports/strings.txt`.
 4. **Deleted SPIFFS files** — `extract/<part>/_deleted/`.
-5. **Assembled at runtime** — nothing in strings; needs disassembly, or watch
-   the console while driving the badge's own UI.
+5. **Assembled at runtime** — nothing in strings; needs disassembly (`[33]`,
+   then start from `reports/ghidra/code-leads.txt` — the ranked shortlist, which
+   cross-references the strings/hashes already found), or watch the console
+   while driving the badge's own UI (`[24]`).
 6. **A region no partition claims** — the hunt searches raw flash too, which
    is why leads sometimes cite `dumps/flash_full.bin` and nothing else.
 

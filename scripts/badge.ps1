@@ -207,6 +207,20 @@ function Invoke-GhidraHeadless {
     Invoke-Container -Image ghidra -Command @('gh-analyze.sh', "/work/$img")
 }
 
+function Invoke-GhidraDumpAnalyze {
+    if (-not (Assert-Target)) { return }
+    $dump = Read-Host "Full flash dump to analyze [dumps/flash_full.bin]"
+    if (-not $dump) { $dump = 'dumps/flash_full.bin' }
+    $full = Get-ArtifactPath ($dump -replace '/', '\')
+    if (-not (Test-Path $full)) {
+        Write-Warn "$dump not found. Acquire a full dump first ([9]/[10])."
+        return
+    }
+    Write-Info "Ghidra over the whole dump: bootloader + every app slot that holds firmware."
+    Write-Info "Each image is decompiled into reports\ghidra\<image>\. This runs Ghidra once per image."
+    Invoke-Container -Image ghidra -Command @('gh-dump.sh', "/work/$dump")
+}
+
 function Invoke-HashId {
     if (-not (Assert-Target)) { return }
     Write-Info "Scanning the workspace for hash-shaped strings (strings, NVS, BLE, extracted files)."
@@ -454,6 +468,23 @@ function Invoke-Monitor {
     Invoke-Hardware -Command $cmd -Interactive
 }
 
+function Invoke-Console {
+    if (-not (Assert-Target)) { return }
+    $baud = Read-Host "Console baud [115200]"
+    if (-not $baud) { $baud = '115200' }
+    $eol = Read-Host "Enter sends [lf] (lf/cr/crlf - try cr/crlf if the badge ignores commands)"
+    if (-not $eol) { $eol = 'lf' }
+    if ($eol -notin 'lf', 'cr', 'crlf') { Write-Warn "Not one of lf/cr/crlf; using lf."; $eol = 'lf' }
+    $echo = Confirm-Action "Locally echo what you type? (only if the badge doesn't echo)"
+    $reset = Confirm-Action "Reset the badge first to catch the boot log?"
+    Write-Info "Two-way terminal: badge output is shown + logged; what you type is sent to it."
+    Write-Info "Char-at-a-time, so single-key menus work. Press Ctrl-] to quit (no reset)."
+    $cmd = @('esp-console.py', '--baud', $baud, '--eol', $eol)
+    if ($echo) { $cmd += '--echo' }
+    if ($reset) { $cmd += '--reset' }
+    Invoke-Hardware -Command $cmd -Interactive
+}
+
 function Invoke-DumpRegion {
     if (-not (Assert-Target)) { return }
     Write-Info "Example: address 0x9000, size 0x6000, name nvs"
@@ -509,9 +540,12 @@ function Show-Menu {
     Write-Host "  ESP32 BADGE RE - CONTROL PLANE" -ForegroundColor Cyan
     Write-Host ("  target: {0,-22} device: {1}" -f $t, (Get-DeviceStatusLine)) -ForegroundColor DarkGray
     Write-Host "==============================================================================" -ForegroundColor DarkCyan
-    Write-Host "  GET STARTED" -ForegroundColor Green
-    Write-Host "    0) Quick start (build + target + attach)     a) Attach badge"
-    Write-Host "    R) RUN ALL - acquire + analyse -> SUMMARY.md (badge to full report)"
+    Write-Host "  START HERE" -ForegroundColor Green
+    Write-Host "    new badge?  do   0  ->  R  ->  18    (set up, then dump+analyse, then read)" -ForegroundColor Green
+    Write-Host "    0) Quick start    build images, choose a target, attach the badge"
+    Write-Host "    R) RUN ALL        dump the badge + offline analysis -> reports/SUMMARY.md"
+    Write-Host "   18) Read results   open reports/SUMMARY.md, then leads.txt"
+    Write-Host "    more:  a) attach badge    20) workspace summary    23) docs    q) quit" -ForegroundColor DarkGray
     Write-Host "  SETUP" -ForegroundColor Yellow
     Write-Host "    1) Environment check                 2) Build / rebuild images"
     Write-Host "    3) USB device manager (advanced)     4) Select / create target"
@@ -519,6 +553,7 @@ function Show-Menu {
     Write-Host "  HARDWARE  (read-only)" -ForegroundColor Yellow
     Write-Host "    5) Identify chip                     6) Read eFuses / security posture"
     Write-Host "    7) Read partition table              8) Serial monitor / boot log"
+    Write-Host "   24) Interactive console (two-way; sends input to the badge)"
     Write-Host "  ACQUIRE" -ForegroundColor Yellow
     Write-Host "    9) Full acquisition (5+6+7+10)      10) Dump full flash"
     Write-Host "   11) Dump a region"
@@ -527,6 +562,10 @@ function Show-Menu {
     Write-Host "   14) Split partitions                 15) Extract filesystems"
     Write-Host "   16) Dump NVS                         17) Hunt flags / secrets"
     Write-Host "   35) Triage strings (signal vs noise)"
+    Write-Host "  WORKSPACE  (the payoff of RUN ALL)" -ForegroundColor Yellow
+    Write-Host "   18) View reports                     19) Verify artefact hashes"
+    Write-Host "   20) Workspace summary"
+    Write-Host "..... CHALLENGE TOOLS  -  reach for these when a lead points you at one ....." -ForegroundColor DarkCyan
     Write-Host "  BLUETOOTH  (BLE challenges - host-side via venv)" -ForegroundColor Yellow
     Write-Host "   25) Scan for BLE devices             26) Dump badge GATT + read all"
     Write-Host "   27) Notifications / write"
@@ -536,9 +575,7 @@ function Show-Menu {
     Write-Host "   29) Identify hashes in workspace     30) Crack locally (GPU)"
     Write-Host "  DISASSEMBLY  (Ghidra: Xtensa + RISC-V)" -ForegroundColor Yellow
     Write-Host "   33) Headless analyze app image       34) Ghidra GUI (noVNC :6080)"
-    Write-Host "  WORKSPACE" -ForegroundColor Yellow
-    Write-Host "   18) View reports                     19) Verify artefact hashes"
-    Write-Host "   20) Workspace summary"
+    Write-Host "   36) Analyze full dump (bootloader + all app slots)"
     Write-Host "  SHELLS" -ForegroundColor Yellow
     Write-Host "   21) Shell in esptool container       22) Shell in analysis container"
     Write-Host "  INFO" -ForegroundColor Yellow
@@ -561,6 +598,7 @@ function Invoke-MenuChoice {
         '6'  { Invoke-Hardware -Command @('esp-efuse.sh') }
         '7'  { Invoke-Hardware -Command @('esp-parttable.sh') }
         '8'  { Invoke-Monitor }
+        '24' { Invoke-Console }
         '9'  { Invoke-Hardware -Command @('esp-acquire.sh') }
         '10' { Invoke-Hardware -Command @('esp-dump.sh') }
         '11' { Invoke-DumpRegion }
@@ -584,6 +622,7 @@ function Invoke-MenuChoice {
         '32' { Invoke-WifiScan }
         '33' { Invoke-GhidraHeadless }
         '34' { if (Assert-Target) { Invoke-GhidraGui } }
+        '36' { Invoke-GhidraDumpAnalyze }
         '27' {
             $a = Read-Host "Badge BD address"
             $c = Read-Host "Notify characteristic UUID"

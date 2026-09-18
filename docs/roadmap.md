@@ -10,7 +10,11 @@
   ([hash-cracking.md](hash-cracking.md))
 - Disassembly — Ghidra headless (Xtensa + RISC-V) with segment-accurate
   loading, plus a noVNC GUI ([ghidra.md](ghidra.md)). 4,672 functions
-  decompiled from the 2025 badge.
+  decompiled from the 2025 badge. `[36]` extends this over the whole flash
+  dump: the bootloader and every populated app slot, each in its own subdir.
+  Every headless pass finishes by triaging its own decompilation into a ranked
+  `code-leads.txt` (`gh-leads.py`), cross-referencing the strings/hashes `[35]`
+  already found against the functions that use them.
 
 The items below are deliberately deferred, not forgotten. Each notes what
 would trigger building it.
@@ -68,7 +72,8 @@ dedicated hardware and a real Linux host, not a Docker Desktop container:
   classified; parsing it would give a register and stack snapshot from the
   last crash.
 - **OTA slot comparison** — badges with `ota_0`/`ota_1` often have two
-  different firmware versions on them. Comparing app descriptors across slots
-  is cheap and occasionally decisive.
+  different firmware versions on them. `[36]` now decompiles each populated
+  slot into its own subdir; a direct app-descriptor / decompilation *diff*
+  across slots is the remaining cheap, occasionally-decisive step.
 - **Chip-off / SPI flash clip** — `flashrom` in a container with a CH341A
   programmer, for a badge whose download mode is fused off.
