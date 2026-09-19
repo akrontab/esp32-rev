@@ -14,7 +14,11 @@
   dump: the bootloader and every populated app slot, each in its own subdir.
   Every headless pass finishes by triaging its own decompilation into a ranked
   `code-leads.txt` (`gh-leads.py`), cross-referencing the strings/hashes `[35]`
-  already found against the functions that use them.
+  already found against the functions that use them. It also recovers strings
+  the firmware assembles at runtime, extracts comparison operands, applies ROM
+  symbol names (`rom-syms.py` + `Enrich.java`), and writes string<->function
+  cross-reference reports. Remaining de-noiser: naming the IDF/Arduino functions
+  via a stock reference build (FunctionID/FLIRT), which needs that build first.
 
 The items below are deliberately deferred, not forgotten. Each notes what
 would trigger building it.

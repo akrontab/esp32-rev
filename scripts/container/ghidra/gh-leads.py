@@ -45,6 +45,7 @@ KEYWORD = re.compile(
 
 # --- init constants / alphabets that give away crypto or encoding.
 B64_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+B32_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
 CRYPTO_CONST = re.compile(
     r"0x67452301|0xefcdab89|0x98badcfe|0x10325476|"       # MD5 init
     r"0x6a09e667|0xbb67ae85|0x3c6ef372|0x5be0cd19|"       # SHA-256 init
@@ -52,6 +53,34 @@ CRYPTO_CONST = re.compile(
     r"0xedb88320|0x04c11db7|"                              # CRC32 polynomials
     r"0x9e3779b9|0x61c88647",                              # TEA/XXTEA delta
     re.I)
+
+# Comparison against a string literal on the same statement - the "expected"
+# input a check is testing for (a password, a flag, an unlock word).
+CMP_LITERAL = re.compile(
+    r"\b(?:strcmp|strncmp|strcasecmp|strncasecmp|memcmp|strstr)\s*\([^;]*?"
+    r'"((?:[^"\\]|\\.){2,64})"')
+
+# A hex literal wide enough (>= 6 bytes) to be a stack-packed ASCII string
+# rather than an address or mask. Ghidra renders runtime-built strings this way.
+PACKED_HEX = re.compile(r"0x([0-9a-fA-F]{12,16})\b")
+
+
+def decode_packed(hexdigits):
+    """A wide hex literal, little-endian, that decodes to printable ASCII is
+    almost always a string the firmware assembles at runtime to dodge `strings`.
+    Return the decoded text, or None if it doesn't look like text."""
+    if len(hexdigits) % 2:
+        return None
+    try:
+        raw = int(hexdigits, 16).to_bytes(len(hexdigits) // 2, "little")
+    except (ValueError, OverflowError):
+        return None
+    raw = raw.rstrip(b"\x00")
+    if len(raw) < 4 or any(b < 0x20 or b > 0x7E for b in raw):
+        return None
+    if sum(chr(b).isalnum() for b in raw) < 4:      # reject printable-but-junk
+        return None
+    return raw.decode("ascii", "replace")
 
 # Functions we never want to surface: SDK/RTOS/libc internals by name.
 BORING_NAME = re.compile(
@@ -138,11 +167,30 @@ def score_function(name, body, found):
         if len(hits) > 3:
             reasons.append("...and %d more found leads" % (len(hits) - 3))
 
-    # 2. Comparison primitives - an equality check against a secret.
+    # 2. Comparison primitives - an equality check against a secret. If the
+    #    comparison is against a string literal, that literal is the answer.
     cmps = sorted(set(CMP.findall(body)))
     if cmps:
         score += 3
         reasons.append("comparison: " + ", ".join(cmps))
+        operands = []
+        for m in CMP_LITERAL.findall(body):
+            if m not in operands:
+                operands.append(m)
+        if operands:
+            score += 2
+            reasons.append("compares against: " + ", ".join('"%s"' % o[:48] for o in operands[:4]))
+
+    # 2b. Strings the function assembles at runtime (packed into wide hex
+    #     constants) - exactly the ones `strings` and fw-hunt never see.
+    assembled = []
+    for h in PACKED_HEX.findall(body):
+        txt = decode_packed(h)
+        if txt and txt not in assembled:
+            assembled.append(txt)
+    if assembled:
+        score += 4
+        reasons.append("assembles string(s): " + ", ".join("%r" % a for a in assembled[:5]))
 
     # 3. Challenge-flavoured keywords in string literals.
     kws = sorted({k.lower() for k in KEYWORD.findall(body)})
@@ -169,6 +217,9 @@ def score_function(name, body, found):
     if B64_ALPHABET in body or B64_ALPHABET[:38] in body:
         score += 3
         reasons.append("base64 alphabet present")
+    if B32_ALPHABET in body:
+        score += 3
+        reasons.append("base32 alphabet present")
 
     # A well-known SDK/libc name with no other signal is almost never a lead.
     if reasons and BORING_NAME.match(name) and score <= 3:

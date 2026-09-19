@@ -49,6 +49,7 @@ analyzeHeadless "$PROJ_DIR" "$PROJ_NAME" \
   -processor "$LANG" \
   -scriptPath "$SCRIPTS" \
   -preScript AddSegments.java "$OUT/segments.tsv" \
+  -postScript Enrich.java "$OUT" \
   -postScript ExportArtifacts.java "$OUT" \
   $KEEP 2>&1 | grep -viE "^(INFO|WARN|Using|Picked|OpenJDK|ERROR REPORT|classpath)" | tail -40 || true
 
@@ -59,6 +60,8 @@ if [ -f "$OUT/decompiled.c" ]; then
   echo "    reports/ghidra/functions.txt       function list (addr, name, size)"
   echo "    reports/ghidra/symbols.txt         symbol table"
   echo "    reports/ghidra/strings-ghidra.txt  defined strings with addresses"
+  echo "    reports/ghidra/xref-strings.txt    string -> functions that use it"
+  echo "    reports/ghidra/func-strings.txt    function -> its strings (tags/messages)"
   wc -l "$OUT/functions.txt" 2>/dev/null | awk '{print "    ("$1" functions)"}'
   echo
   echo "[*] Triaging the decompilation into a ranked shortlist"

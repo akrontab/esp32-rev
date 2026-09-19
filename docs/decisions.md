@@ -296,6 +296,29 @@ upgrade if the heuristics prove too coarse on a real badge.
 
 ---
 
+## D19 — Deeper Ghidra signal: runtime-string recovery, ROM naming, xrefs
+
+**Decision.** The lead-hunt is deepened in two layers. In the text pass
+(`gh-leads.py`): decode strings the firmware **assembles at runtime** (Ghidra
+renders a stack-built string as a wide hex constant — decoded back to ASCII),
+extract the **literal a comparison tests against** (the expected password/flag),
+and recognise base32 as well as base64. In an in-Ghidra postScript
+(`Enrich.java`, run before `ExportArtifacts`): apply **ROM symbol names** from
+`rom-syms.py` (parsed from ESP-IDF `.rom.ld`), and emit **string<->function
+cross-reference** reports (`xref-strings.txt`, `func-strings.txt`).
+
+**Why.** The highest-value finds on a CTF badge are the strings that never exist
+as stored bytes (built on the stack, so invisible to `strings`/`[17]`/`[35]`)
+and the exact operand a check compares against — both recoverable from the
+decompilation text, and validated on synthesised input. The precise
+signals — which function uses a string, and real ROM names — need the program
+model, so they live in `Enrich.java`; that also keeps the D18 text-vs-Ghidra
+split intact (text pass stays cheap and testable, the API pass adds precision).
+ROM naming is the cheap half of de-noising; naming the IDF/Arduino functions
+still needs a reference build (FunctionID/FLIRT), noted as the remaining step.
+
+---
+
 ## Validation
 
 The format parsers were checked against ground truth from Espressif's own
@@ -307,6 +330,8 @@ tooling rather than assumed correct.
 | `espfmt` partition table | Hand-built table with MD5 entry                             | All five partitions and the MD5 recovered                                                                |
 | `gh-images` full-dump inventory | The committed 2025 badge dump (`workspace/badge-2025`) | Found bootloader @0x0 (S3) + app0 (`arduino-lib-builder`, IDF v4.4.7-dirty) as loadable; app1 correctly skipped as blank. Carved images re-parse with `checksum_ok`. |
 | `gh-leads` decompilation ranking | Synthesised `decompiled.c` + `functions.txt` + `meta/leads.json` | A `strcmp`-vs-`L3tM31n!` check ranks #1 (found-lead + comparison + keywords); crypto-const and XOR-cipher functions follow; memcpy wrapper and an SDK function score zero and are dropped. |
+| `gh-leads` runtime-string + operand signals | Synthesised `decompiled.c` | A stack-packed constant `0x656d6b636f6c6e75` decodes to `"unlockme"`; a `strcmp` operand `"L3tM31n!"` is extracted; base32 alphabet flagged. |
+| `rom-syms` ld parser | Synthesised `esp32s3.rom.ld` | The three `PROVIDE(name=0xADDR)` lines become address-sorted `addr<TAB>name` rows; a non-`PROVIDE` assignment is ignored. |
 | `nvsfmt`                 | Partition built by `esp-idf-nvs-partition-gen` from a CSV   | Namespaces resolved; string, u8, u32, blob-data and blob-index entries all decoded correctly             |
 | `spiffsfmt`              | Image built by ESP-IDF's `spiffsgen.py` (v5.2.1)            | All 4 files extracted **byte-identical**, including a 10 KiB multi-page file and a nested path           |
 

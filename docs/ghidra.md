@@ -31,7 +31,12 @@ If the flash is encrypted, disassembly of the serial dump is meaningless
 
 ## Headless analysis — `[33]`
 
-Runs the whole pipeline unattended and drops the results in the workspace:
+`[33]` first shows a **pick-list of the split partitions** (read from
+`meta/parts_manifest.json`): ESP code images are listed first and one is the
+default, while blank slots and data partitions (NVS, SPIFFS, ...) are marked
+`(not code)` and ask for confirmation, since disassembling them is meaningless.
+Pick one — or `c` to type a path — and it runs the whole pipeline unattended,
+dropping the results in the workspace:
 
 1. **`gh-prep`** reads the app image with `espfmt` (the same validated parser
    the analysis pipeline uses) and splits it into its segments, recording each
@@ -42,7 +47,8 @@ Runs the whole pipeline unattended and drops the results in the workspace:
    segments correctly is what lets cross-references between code (IROM/IRAM)
    and constants/strings (DROM/DRAM) resolve. The load addresses come from the
    image header — the same ones `reports/triage.txt` prints.
-3. Ghidra auto-analyses, then **`ExportArtifacts`** writes plain files:
+3. Ghidra auto-analyses; **`Enrich`** then names ROM calls (see below) and
+   writes the cross-reference views, and **`ExportArtifacts`** writes plain files:
 
    | File                                | Contents                             |
    | ----------------------------------- | ------------------------------------ |
@@ -50,6 +56,8 @@ Runs the whole pipeline unattended and drops the results in the workspace:
    | `reports/ghidra/functions.txt`      | address, name, size of each function |
    | `reports/ghidra/symbols.txt`        | the symbol table                     |
    | `reports/ghidra/strings-ghidra.txt` | defined strings with addresses       |
+   | `reports/ghidra/xref-strings.txt`   | each string -> the functions that reference it |
+   | `reports/ghidra/func-strings.txt`   | each function -> its strings (rough labelling) |
    | `reports/ghidra/code-leads.txt`     | ranked shortlist of functions to read (see below) |
 
 Because the output is plain text, you can `grep` the decompilation for a
@@ -73,11 +81,19 @@ It scores every function on two kinds of signal:
   credentials, or cracked hashes scores highest — this is what connects a
   static string like `L3tM31n!` to the code that checks it. Run `[35]` before
   the Ghidra pass to light this up.
-- **Static heuristics** on each function body: comparison primitives
-  (`strcmp`/`memcmp` — an equality check against a secret), XOR/shift-heavy
-  code (a custom cipher or checksum), crypto/CRC init constants and the base64
-  alphabet, and challenge-flavoured keywords (`unlock`, `access granted`,
-  `wrong`, ...). Well-known SDK/libc functions with no other signal are dropped.
+- **Static heuristics** on each function body:
+  - comparison primitives (`strcmp`/`memcmp`) — an equality check against a
+    secret; when the comparison is against a **string literal**, that literal is
+    extracted (it's the expected password/flag);
+  - **strings the function assembles at runtime** — Ghidra renders a
+    stack-built string as a wide hex constant (e.g. `local_20 = 0x656d6b636f6c6e75`);
+    these are decoded back to text (`"unlockme"`), surfacing exactly the strings
+    that `strings`/`[17]`/`[35]` can never see because they're never stored;
+  - XOR/shift-heavy code (a custom cipher or checksum), crypto/CRC init
+    constants, and the base64 / base32 alphabets;
+  - challenge-flavoured keywords (`unlock`, `access granted`, `wrong`, ...).
+
+  Well-known SDK/libc functions with no other signal are dropped.
 
 Read `code-leads.txt` from the top; each entry gives the address, name, size,
 score, and why it was flagged, so you know what to open in the GUI (`[34]`) or
@@ -87,6 +103,39 @@ every image of `[36]` (each slot gets its own `code-leads.txt`).
 By default the Ghidra project is deleted after export (only the reports are
 kept). Pass `--keep` (in the container shell) to retain the `.gpr` for opening
 in the GUI later.
+
+### Cross-references and naming — `Enrich`
+
+Between analysis and export, `Enrich.java` adds three things that make the
+decompilation navigable instead of a wall of `FUN_*`:
+
+- **`xref-strings.txt`** — for every defined string, the functions that
+  reference it. This answers *"where is this string used?"* precisely (real
+  cross-references, not a text grep), so a promising string in
+  `reports/leads.txt` leads you straight to the code that consumes it.
+- **`func-strings.txt`** — the inverse: each function and the string literals it
+  touches. A function's strings are its log tags, prompts and messages, so this
+  reads as a rough, free labelling of what each function is *about*.
+
+### Naming the ROM — `rom-syms.py`
+
+Most `FUN_40xxxxxx` calls in a stripped image go into the chip's **mask ROM**
+(libc, crypto, boot helpers) at fixed addresses. Espressif ships those names in
+`.rom.ld` linker scripts inside ESP-IDF. Convert them once:
+
+```
+# in the esptool/analysis container shell, or on the host (pure Python):
+rom-syms.py <esp-idf>/components/esp_rom/<chip>/ld     # -> reports/ghidra/rom-symbols.tsv
+```
+
+On the next `[33]`/`[36]` run, `Enrich` labels each ROM address, so calls read
+as `ets_printf` / `memcpy` / `esp_rom_crc32_le` — and, crucially, the functions
+left *unnamed* are the badge's own code. Use the ld directory for the badge's
+chip (the app descriptor in `reports/triage.txt` tells you which).
+
+The bigger win beyond the ROM — naming the **IDF/Arduino** functions — still
+needs a stock reference build to diff against (`FunctionID`/FLIRT); this ROM
+step is the cheap half that needs no build.
 
 ---
 
