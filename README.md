@@ -285,6 +285,7 @@ base64 blobs, JWTs, MAC addresses, and 32–64 char hex (hashes and keys).
 | [docs/ble.md](docs/ble.md)                         | Bluetooth LE challenges: scan, dump GATT, why BLE runs host-side                         |
 | [docs/wifi.md](docs/wifi.md)                       | WiFi capability recon: firmware analysis + host SoftAP scan                              |
 | [docs/ghidra.md](docs/ghidra.md)                   | Disassembly: headless decompilation + noVNC GUI (Xtensa/RISC-V)                          |
+| [docs/name-recovery.md](docs/name-recovery.md)     | Naming FUN_* via a symbolised SDK reference build (FunctionID / BinDiff)                  |
 | [docs/playbook.md](docs/playbook.md)               | The order to actually do things in, with decision points                                 |
 | [docs/usb-passthrough.md](docs/usb-passthrough.md) | How the badge reaches a container, and what breaks                                       |
 | [docs/architecture.md](docs/architecture.md)       | Why it is built this way                                                                 |

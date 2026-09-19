@@ -319,6 +319,28 @@ still needs a reference build (FunctionID/FLIRT), noted as the remaining step.
 
 ---
 
+## D20 — Name recovery: script the reference build, keep the apply interactive
+
+**Decision.** A new `arduino` image + `[37]` (`arduino-ref.sh`) builds a
+symbolised reference ELF from the arduino-esp32 core with `arduino-cli`,
+version-parameterised (the core is installed at run time, so any version — the
+badge's, newer, or older — is just an argument; cached in a Docker volume).
+Applying those symbols to the stripped dump stays a documented **interactive**
+Ghidra step — FunctionID for an exact version match, BinDiff for a near one —
+written up in `docs/name-recovery.md`.
+
+**Why.** The build is the tedious, automatable half: reproducing the exact SDK
+toolchain output. The apply is inherently GUI (FID DB management / BinDiff
+review) and version-sensitive, and a headless FID pipeline would be fragile and
+untestable here — so it's a procedure, not a script, and the same procedure
+serves every version. This is the definitive de-noiser above ROM naming (D19):
+ROM covers the mask ROM, this covers the IDF/Arduino layer. It also realises the
+`docker/arduino` idea raised at the start of this work as a *companion/reference*
+tool, kept clearly separate from the read-only badge-facing flow (it only
+downloads public packages and compiles offline; the badge is untouched).
+
+---
+
 ## Validation
 
 The format parsers were checked against ground truth from Espressif's own

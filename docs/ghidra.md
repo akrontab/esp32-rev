@@ -219,7 +219,12 @@ no VNC password — do not expose 6080 on a public interface.
 
 The single biggest time-saver on an ESP-IDF binary: the app descriptor
 (`reports/triage.txt`) tells you the **exact IDF version**. Build a stock
-firmware with that same version and diff — the SDK functions match, leaving the
-badge's own code as what's left. That turns 4,672 anonymous functions into a
-few dozen worth reading. This is a manual step; the toolkit gives you the
-version and the decompilation to start from.
+firmware with that same version and match — the SDK functions line up, leaving
+the badge's own code as what's left. That turns 4,672 anonymous functions into a
+few dozen worth reading.
+
+`[37] Build SDK reference` now does the build for you (any arduino-esp32
+version, via `arduino-cli`), producing a symbolised `reference.elf`; applying it
+to the badge with Ghidra's FunctionID (exact version) or BinDiff (a close one)
+is the interactive step. The whole procedure — including using a newer/older
+version than the badge's — is in **[name-recovery.md](name-recovery.md)**.

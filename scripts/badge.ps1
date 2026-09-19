@@ -85,7 +85,7 @@ function Invoke-EnvironmentCheck {
     foreach ($row in Get-ImageStatus) {
         if ($row.Status -eq 'built') {
             Write-Ok ("image {0,-9} {1,-8} built {2}" -f $row.Image, $row.Size, $row.Built)
-        } elseif ($row.Image -in 'ghidra', 'hashcat') {
+        } elseif ($row.Image -in 'ghidra', 'hashcat', 'arduino') {
             Write-Info ("image {0,-9} not built (optional; build when needed)" -f $row.Image)
         } else {
             Write-Warn ("image {0,-9} not built - use [2]" -f $row.Image)
@@ -123,6 +123,7 @@ function Invoke-BuildImages {
     Write-Host "  3) both"
     Write-Host "  4) hashcat   - local GPU hash cracking (CUDA base + rockyou; large)"
     Write-Host "  5) ghidra    - disassembly, Xtensa + RISC-V (large download)"
+    Write-Host "  6) arduino   - reference builder for Ghidra name recovery (docs/name-recovery.md)"
     Write-Host "  (BLE needs no image - it runs host-side in the venv; see docs/ble.md)"
     $pick = Read-Host "Which"
     $noCache = Confirm-Action "Build without cache?"
@@ -141,6 +142,7 @@ function Invoke-BuildImages {
             Build-Image -Name hashcat -NoCache:$noCache | Out-Null
         }
         '5' { Build-Image -Name ghidra   -NoCache:$noCache | Out-Null }
+        '6' { Build-Image -Name arduino  -NoCache:$noCache | Out-Null }
         default { Write-Warn "Nothing selected." }
     }
 }
@@ -297,6 +299,50 @@ function Invoke-GhidraDumpAnalyze {
     Write-Info "Ghidra over the whole dump: bootloader + every app slot that holds firmware."
     Write-Info "Each image is decompiled into reports\ghidra\<image>\. This runs Ghidra once per image."
     Invoke-Container -Image ghidra -Command @('gh-dump.sh', "/work/$dump")
+}
+
+function Invoke-ArduinoReference {
+    if (-not (Assert-Target)) { return }
+
+    # Chip from the acquisition metadata (falls back to state / a sane default).
+    $chip = ''
+    $tj = Get-ArtifactPath 'meta\target.json'
+    if (Test-Path $tj) { try { $chip = (Get-Content $tj -Raw | ConvertFrom-Json).chip_arg } catch { } }
+    if (-not $chip) { $chip = $script:State.Chip }
+    if (-not $chip) { $chip = 'esp32s3' }
+    $chip = $chip.ToLower().Replace('-', '')
+
+    # Detected IDF version (from the app descriptor) -> suggest a matching core.
+    $idf = ''
+    $pm = Get-ArtifactPath 'meta\parts_manifest.json'
+    if (Test-Path $pm) {
+        try {
+            $cls = ((Get-Content $pm -Raw | ConvertFrom-Json) |
+                Where-Object { $_.label -like 'app*' } | Select-Object -First 1).classification
+            if ($cls -match 'idf=v?(\d+\.\d+\.\d+)') { $idf = $Matches[1] }
+        } catch { }
+    }
+    $suggest = ''
+    if ($idf -like '4.4*') { $suggest = '2.0.16' }
+    elseif ($idf -like '5.1*') { $suggest = '3.0.7' }
+
+    Write-Rule 'Build an SDK reference for Ghidra name recovery'
+    Write-Host "  Chip: $chip"
+    if ($idf) { Write-Host "  Badge built with ESP-IDF v$idf (from the app descriptor)." }
+    Write-Info "Builds a symbolised reference ELF with arduino-cli so Ghidra can name the SDK"
+    Write-Info "functions in the dump. Downloads the core (network); the badge is untouched."
+    Write-Info "Match the arduino-esp32 core to the badge's IDF; try a newer/older version and"
+    Write-Info "BinDiff if it doesn't line up - see docs\name-recovery.md."
+
+    $label = if ($suggest) { "arduino-esp32 core version [$suggest]" } else { "arduino-esp32 core version [latest]" }
+    $ver = Read-Host $label
+    if (-not $ver -and $suggest) { $ver = $suggest }   # empty stays empty -> latest
+
+    $profile = if (Confirm-Action "Full profile (pull in WiFi/BLE/ESP-NOW/mbedtls for more symbols)?" -Default) { 'full' } else { 'minimal' }
+
+    Write-Info "Building the reference (core install + compile can take several minutes the first time)."
+    Invoke-Container -Image arduino -Command @('arduino-ref.sh', "$ver", "$chip", "$profile") `
+        -ExtraArgs @('-v', 'esp32-re-arduino-cache:/root/.arduino15')
 }
 
 function Invoke-HashId {
@@ -674,6 +720,7 @@ $script:MenuCommands = @(
     [pscustomobject]@{ Id = '33'; Group = '5'; Section = 'Disassembly  (Ghidra: Xtensa + RISC-V)';    Label = 'Headless analyze a partition (pick-list)' }
     [pscustomobject]@{ Id = '34'; Group = '5'; Section = 'Disassembly  (Ghidra: Xtensa + RISC-V)';    Label = 'Ghidra GUI (noVNC :6080)' }
     [pscustomobject]@{ Id = '36'; Group = '5'; Section = 'Disassembly  (Ghidra: Xtensa + RISC-V)';    Label = 'Analyze full dump (bootloader + all app slots)' }
+    [pscustomobject]@{ Id = '37'; Group = '5'; Section = 'Disassembly  (Ghidra: Xtensa + RISC-V)';    Label = 'Build SDK reference for name recovery' }
 
     [pscustomobject]@{ Id = '21'; Group = '6'; Section = 'shells';    Label = 'Shell in esptool container' }
     [pscustomobject]@{ Id = '22'; Group = '6'; Section = 'shells';    Label = 'Shell in analysis container' }
@@ -764,6 +811,7 @@ function Invoke-MenuChoice {
         '33' { Invoke-GhidraHeadless }
         '34' { if (Assert-Target) { Invoke-GhidraGui } }
         '36' { Invoke-GhidraDumpAnalyze }
+        '37' { Invoke-ArduinoReference }
         '27' {
             $a = Read-Host "Badge BD address"
             $c = Read-Host "Notify characteristic UUID"

@@ -16,6 +16,7 @@ $script:Images = @{
     analysis = 'esp32-re/analysis:latest'
     hashcat  = 'esp32-re/hashcat:latest'
     ghidra   = 'esp32-re/ghidra:latest'
+    arduino  = 'esp32-re/arduino:latest'
 }
 
 function Test-DockerReady {
@@ -37,7 +38,7 @@ function Test-ImageExists {
 }
 
 function Get-ImageStatus {
-    $rows = foreach ($n in 'esptool', 'analysis', 'hashcat', 'ghidra') {
+    $rows = foreach ($n in 'esptool', 'analysis', 'hashcat', 'ghidra', 'arduino') {
         $tag = $script:Images[$n]
         $info = docker images --format '{{.Size}}|{{.CreatedSince}}' $tag 2>$null | Select-Object -First 1
         if ($info) {

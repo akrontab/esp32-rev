@@ -17,8 +17,10 @@
   already found against the functions that use them. It also recovers strings
   the firmware assembles at runtime, extracts comparison operands, applies ROM
   symbol names (`rom-syms.py` + `Enrich.java`), and writes string<->function
-  cross-reference reports. Remaining de-noiser: naming the IDF/Arduino functions
-  via a stock reference build (FunctionID/FLIRT), which needs that build first.
+  cross-reference reports. The IDF/Arduino de-noiser is now scriptable too: `[37]`
+  builds a symbolised reference ELF from the matching arduino-esp32 core (any
+  version), which Ghidra FunctionID/BinDiff matches against the dump to name the
+  SDK functions ([name-recovery.md](name-recovery.md)); the apply is a GUI step.
 
 The items below are deliberately deferred, not forgotten. Each notes what
 would trigger building it.
