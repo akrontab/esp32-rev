@@ -193,16 +193,94 @@ function Invoke-WifiScan {
     } finally { $env:WORK = $prev }
 }
 
+function Get-GhidraCandidates {
+    # The partitions worth offering to Ghidra, read from the split manifest
+    # (meta\parts_manifest.json, which already classifies each one) or, failing
+    # that, the raw parts\*.bin files. ESP code images are flagged IsImage.
+    $cands = @()
+    $manifestPath = Get-ArtifactPath 'meta\parts_manifest.json'
+    if (Test-Path $manifestPath) {
+        $manifest = $null
+        try { $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json } catch { }
+        foreach ($p in $manifest) {
+            $full = Get-ArtifactPath ($p.file -replace '/', '\')
+            if (-not (Test-Path $full)) { continue }
+            $cands += [pscustomobject]@{
+                Label   = $p.label
+                File    = $p.file
+                KB      = [math]::Round($p.size / 1KB)
+                Class   = "$($p.classification)"
+                IsImage = ("$($p.classification)" -like 'ESP image*')
+            }
+        }
+    }
+    if (-not $cands) {
+        $partsDir = Get-ArtifactPath 'parts'
+        if (Test-Path $partsDir) {
+            foreach ($f in Get-ChildItem $partsDir -Filter '*.bin' | Sort-Object Name) {
+                $cands += [pscustomobject]@{
+                    Label   = [IO.Path]::GetFileNameWithoutExtension($f.Name)
+                    File    = "parts/$($f.Name)"
+                    KB      = [math]::Round($f.Length / 1KB)
+                    Class   = '(unclassified - run [14] split for details)'
+                    IsImage = $true
+                }
+            }
+        }
+    }
+    # ESP images first, so the natural default is a real app image.
+    @($cands | Sort-Object @{ Expression = { -not $_.IsImage } }, Label)
+}
+
 function Invoke-GhidraHeadless {
     if (-not (Assert-Target)) { return }
-    $img = Read-Host "App image to analyze [parts/app0.bin]"
-    if (-not $img) { $img = 'parts/app0.bin' }
-    $full = Get-ArtifactPath ($img -replace '/', '\')
-    if (-not (Test-Path $full)) {
-        Write-Warn "$img not found. Run the analysis pipeline (split) first to produce parts\."
+
+    $cands = Get-GhidraCandidates
+    if (-not $cands) {
+        Write-Warn "No partitions found. Run [14] split (or [12] pipeline) first to produce parts\."
         return
     }
-    Write-Info "Headless Ghidra: maps segments at their load addresses, analyzes, exports decompilation."
+
+    Write-Rule 'Ghidra - choose a partition to disassemble'
+    $i = 1
+    $defaultIdx = 0
+    foreach ($c in $cands) {
+        if ($defaultIdx -eq 0 -and $c.IsImage) { $defaultIdx = $i }
+        $cls = if ($c.Class.Length -gt 50) { $c.Class.Substring(0, 47) + '...' } else { $c.Class }
+        $tag = if ($c.IsImage) { '' } else { '   (not code)' }
+        Write-Host ("  {0,2}) {1,-10} {2,6} KB  {3}{4}" -f $i, $c.Label, $c.KB, $cls, $tag)
+        $i++
+    }
+    if ($defaultIdx -eq 0) { $defaultIdx = 1 }
+    Write-Host "   c) Enter a path manually"
+    Write-Host "   (for the bootloader + every app slot in one run, use [36])" -ForegroundColor DarkGray
+
+    $pick = Read-Host "Analyze which [$defaultIdx]"
+    if (-not $pick) { $pick = "$defaultIdx" }
+
+    if ($pick -eq 'c') {
+        $img = Read-Host "Path under the workspace (e.g. parts/app0.bin)"
+        if (-not $img) { return }
+    } else {
+        $idx = 0
+        if (-not [int]::TryParse($pick, [ref]$idx) -or $idx -lt 1 -or $idx -gt $cands.Count) {
+            Write-Warn "Not a listed choice."
+            return
+        }
+        $chosen = $cands[$idx - 1]
+        if (-not $chosen.IsImage) {
+            Write-Warn "$($chosen.Label) is $($chosen.Class) - not an ESP code image; disassembly won't be meaningful."
+            if (-not (Confirm-Action "Analyze it anyway?")) { return }
+        }
+        $img = $chosen.File
+    }
+
+    $full = Get-ArtifactPath ($img -replace '/', '\')
+    if (-not (Test-Path $full)) {
+        Write-Warn "$img not found."
+        return
+    }
+    Write-Info "Headless Ghidra: maps segments at their load addresses, analyzes, exports decompilation + a ranked code-leads.txt."
     Write-Info "This can take several minutes on a full app image."
     Invoke-Container -Image ghidra -Command @('gh-analyze.sh', "/work/$img")
 }
@@ -533,54 +611,117 @@ function Show-Docs {
 # menu
 # ---------------------------------------------------------------------------
 
-function Show-Menu {
+# ---------------------------------------------------------------------------
+# menu model  (nested: a top menu of groups, each opening a submenu). Command
+# numbers are unchanged, so docs and muscle memory still hold; a 2-digit
+# command number typed anywhere runs it directly.
+# ---------------------------------------------------------------------------
+
+$script:MenuGroups = [ordered]@{
+    '1' = 'Setup'
+    '2' = 'Hardware & Acquire'
+    '3' = 'Analyse'
+    '4' = 'Workspace'
+    '5' = 'Challenge tools'
+    '6' = 'Shells & Info'
+}
+
+$script:MenuGroupHint = @{
+    '1' = 'images, target, venv'
+    '2' = 'read the chip, dump it, drive the console'
+    '3' = 'offline pipeline, extract, hunt'
+    '4' = 'reports, verify, summary'
+    '5' = 'BLE, WiFi, hash, Ghidra'
+    '6' = 'container shells, docs'
+}
+
+# Ordered command catalog. Section renders as a sub-header inside the submenu.
+$script:MenuCommands = @(
+    [pscustomobject]@{ Id = '1';  Group = '1'; Section = '';          Label = 'Environment check' }
+    [pscustomobject]@{ Id = '2';  Group = '1'; Section = '';          Label = 'Build / rebuild images' }
+    [pscustomobject]@{ Id = '3';  Group = '1'; Section = '';          Label = 'USB device manager (advanced)' }
+    [pscustomobject]@{ Id = '4';  Group = '1'; Section = '';          Label = 'Select / create target' }
+    [pscustomobject]@{ Id = 'V';  Group = '1'; Section = '';          Label = 'Recreate host venv' }
+
+    [pscustomobject]@{ Id = '5';  Group = '2'; Section = 'read-only'; Label = 'Identify chip' }
+    [pscustomobject]@{ Id = '6';  Group = '2'; Section = 'read-only'; Label = 'Read eFuses / security posture' }
+    [pscustomobject]@{ Id = '7';  Group = '2'; Section = 'read-only'; Label = 'Read partition table' }
+    [pscustomobject]@{ Id = '8';  Group = '2'; Section = 'read-only'; Label = 'Serial monitor / boot log' }
+    [pscustomobject]@{ Id = '24'; Group = '2'; Section = 'read-only'; Label = 'Interactive console (two-way; sends input)' }
+    [pscustomobject]@{ Id = '9';  Group = '2'; Section = 'acquire';   Label = 'Full acquisition (5+6+7+10)' }
+    [pscustomobject]@{ Id = '10'; Group = '2'; Section = 'acquire';   Label = 'Dump full flash' }
+    [pscustomobject]@{ Id = '11'; Group = '2'; Section = 'acquire';   Label = 'Dump a region' }
+
+    [pscustomobject]@{ Id = '12'; Group = '3'; Section = '';          Label = 'Full analysis pipeline' }
+    [pscustomobject]@{ Id = '13'; Group = '3'; Section = '';          Label = 'Triage a dump' }
+    [pscustomobject]@{ Id = '14'; Group = '3'; Section = '';          Label = 'Split partitions' }
+    [pscustomobject]@{ Id = '15'; Group = '3'; Section = '';          Label = 'Extract filesystems' }
+    [pscustomobject]@{ Id = '16'; Group = '3'; Section = '';          Label = 'Dump NVS' }
+    [pscustomobject]@{ Id = '17'; Group = '3'; Section = '';          Label = 'Hunt flags / secrets' }
+    [pscustomobject]@{ Id = '35'; Group = '3'; Section = '';          Label = 'Triage strings (signal vs noise)' }
+
+    [pscustomobject]@{ Id = '18'; Group = '4'; Section = '';          Label = 'View reports (SUMMARY.md, leads.txt)' }
+    [pscustomobject]@{ Id = '19'; Group = '4'; Section = '';          Label = 'Verify artefact hashes' }
+    [pscustomobject]@{ Id = '20'; Group = '4'; Section = '';          Label = 'Workspace summary' }
+
+    [pscustomobject]@{ Id = '25'; Group = '5'; Section = 'Bluetooth  (host-side via venv)';           Label = 'Scan for BLE devices' }
+    [pscustomobject]@{ Id = '26'; Group = '5'; Section = 'Bluetooth  (host-side via venv)';           Label = 'Dump badge GATT + read all' }
+    [pscustomobject]@{ Id = '27'; Group = '5'; Section = 'Bluetooth  (host-side via venv)';           Label = 'Notifications / write' }
+    [pscustomobject]@{ Id = '31'; Group = '5'; Section = 'WiFi  (capability recon)';                  Label = 'WiFi capabilities (from dump)' }
+    [pscustomobject]@{ Id = '32'; Group = '5'; Section = 'WiFi  (capability recon)';                  Label = 'Scan for badge AP (host)' }
+    [pscustomobject]@{ Id = '29'; Group = '5'; Section = 'Hash cracking  (local GPU first)';          Label = 'Identify hashes in workspace' }
+    [pscustomobject]@{ Id = '30'; Group = '5'; Section = 'Hash cracking  (local GPU first)';          Label = 'Crack locally (GPU)' }
+    [pscustomobject]@{ Id = '33'; Group = '5'; Section = 'Disassembly  (Ghidra: Xtensa + RISC-V)';    Label = 'Headless analyze a partition (pick-list)' }
+    [pscustomobject]@{ Id = '34'; Group = '5'; Section = 'Disassembly  (Ghidra: Xtensa + RISC-V)';    Label = 'Ghidra GUI (noVNC :6080)' }
+    [pscustomobject]@{ Id = '36'; Group = '5'; Section = 'Disassembly  (Ghidra: Xtensa + RISC-V)';    Label = 'Analyze full dump (bootloader + all app slots)' }
+
+    [pscustomobject]@{ Id = '21'; Group = '6'; Section = 'shells';    Label = 'Shell in esptool container' }
+    [pscustomobject]@{ Id = '22'; Group = '6'; Section = 'shells';    Label = 'Shell in analysis container' }
+    [pscustomobject]@{ Id = '23'; Group = '6'; Section = 'info';      Label = 'Docs / playbook' }
+)
+
+# Ids valid for direct entry (case-insensitive), incl. the global quick actions.
+$script:ValidIds = @{}
+foreach ($c in $script:MenuCommands) { $script:ValidIds[$c.Id.ToLower()] = $true }
+foreach ($q in '0', 'r', 'a') { $script:ValidIds[$q] = $true }
+
+function Show-MenuBanner {
     $t = if ($script:State.Target) { $script:State.Target } else { '<none>' }
     Write-Host ""
     Write-Host "==============================================================================" -ForegroundColor DarkCyan
     Write-Host "  ESP32 BADGE RE - CONTROL PLANE" -ForegroundColor Cyan
     Write-Host ("  target: {0,-22} device: {1}" -f $t, (Get-DeviceStatusLine)) -ForegroundColor DarkGray
     Write-Host "==============================================================================" -ForegroundColor DarkCyan
+}
+
+function Show-Menu {
+    Show-MenuBanner
     Write-Host "  START HERE" -ForegroundColor Green
-    Write-Host "    new badge?  do   0  ->  R  ->  18    (set up, then dump+analyse, then read)" -ForegroundColor Green
-    Write-Host "    0) Quick start    build images, choose a target, attach the badge"
-    Write-Host "    R) RUN ALL        dump the badge + offline analysis -> reports/SUMMARY.md"
-    Write-Host "   18) Read results   open reports/SUMMARY.md, then leads.txt"
-    Write-Host "    more:  a) attach badge    20) workspace summary    23) docs    q) quit" -ForegroundColor DarkGray
-    Write-Host "  SETUP" -ForegroundColor Yellow
-    Write-Host "    1) Environment check                 2) Build / rebuild images"
-    Write-Host "    3) USB device manager (advanced)     4) Select / create target"
-    Write-Host "    V) Recreate host venv"
-    Write-Host "  HARDWARE  (read-only)" -ForegroundColor Yellow
-    Write-Host "    5) Identify chip                     6) Read eFuses / security posture"
-    Write-Host "    7) Read partition table              8) Serial monitor / boot log"
-    Write-Host "   24) Interactive console (two-way; sends input to the badge)"
-    Write-Host "  ACQUIRE" -ForegroundColor Yellow
-    Write-Host "    9) Full acquisition (5+6+7+10)      10) Dump full flash"
-    Write-Host "   11) Dump a region"
-    Write-Host "  ANALYSE  (offline)" -ForegroundColor Yellow
-    Write-Host "   12) Full analysis pipeline           13) Triage a dump"
-    Write-Host "   14) Split partitions                 15) Extract filesystems"
-    Write-Host "   16) Dump NVS                         17) Hunt flags / secrets"
-    Write-Host "   35) Triage strings (signal vs noise)"
-    Write-Host "  WORKSPACE  (the payoff of RUN ALL)" -ForegroundColor Yellow
-    Write-Host "   18) View reports                     19) Verify artefact hashes"
-    Write-Host "   20) Workspace summary"
-    Write-Host "..... CHALLENGE TOOLS  -  reach for these when a lead points you at one ....." -ForegroundColor DarkCyan
-    Write-Host "  BLUETOOTH  (BLE challenges - host-side via venv)" -ForegroundColor Yellow
-    Write-Host "   25) Scan for BLE devices             26) Dump badge GATT + read all"
-    Write-Host "   27) Notifications / write"
-    Write-Host "  WIFI  (capability recon)" -ForegroundColor Yellow
-    Write-Host "   31) WiFi capabilities (from dump)    32) Scan for badge AP (host)"
-    Write-Host "  HASH CRACKING  (local GPU first; Linode rig is manual escalation)" -ForegroundColor Yellow
-    Write-Host "   29) Identify hashes in workspace     30) Crack locally (GPU)"
-    Write-Host "  DISASSEMBLY  (Ghidra: Xtensa + RISC-V)" -ForegroundColor Yellow
-    Write-Host "   33) Headless analyze app image       34) Ghidra GUI (noVNC :6080)"
-    Write-Host "   36) Analyze full dump (bootloader + all app slots)"
-    Write-Host "  SHELLS" -ForegroundColor Yellow
-    Write-Host "   21) Shell in esptool container       22) Shell in analysis container"
-    Write-Host "  INFO" -ForegroundColor Yellow
-    Write-Host "   23) Docs / playbook                   q) Quit"
+    Write-Host "    new badge?  do   0  ->  R  ->  18   (set up, then dump+analyse, then read)" -ForegroundColor Green
+    Write-Host "    0) Quick start     R) RUN ALL     18) Read results (reports/SUMMARY.md)"
+    Write-Host "  MENUS  (type a number to open a group)" -ForegroundColor Yellow
+    foreach ($k in $script:MenuGroups.Keys) {
+        Write-Host ("   {0}) {1,-20}{2}" -f $k, $script:MenuGroups[$k], $script:MenuGroupHint[$k])
+    }
+    Write-Host "    tip: you can still type any command number directly (e.g. 33)" -ForegroundColor DarkGray
+    Write-Host "    a) Attach badge     q) Quit" -ForegroundColor DarkGray
     Write-Host "------------------------------------------------------------------------------" -ForegroundColor DarkCyan
+}
+
+function Show-Submenu {
+    param([Parameter(Mandatory)][string]$Group)
+    Show-MenuBanner
+    Write-Host ("  {0}   ({1})" -f $script:MenuGroups[$Group].ToUpper(), $script:MenuGroupHint[$Group]) -ForegroundColor Green
+    $lastSection = $null
+    foreach ($c in $script:MenuCommands | Where-Object { $_.Group -eq $Group }) {
+        if ($c.Section -and $c.Section -ne $lastSection) {
+            Write-Host ("  {0}" -f $c.Section) -ForegroundColor Yellow
+            $lastSection = $c.Section
+        }
+        Write-Host ("   {0,3}) {1}" -f $c.Id, $c.Label)
+    }
+    Write-Host "------------------------------------------------------------------------------" -ForegroundColor DarkCyan
+    Write-Host "    b) Back to main menu     q) Quit" -ForegroundColor DarkGray
 }
 
 function Invoke-MenuChoice {
@@ -670,17 +811,47 @@ if (-not $Target -and (
 }
 
 try {
+    # $view is 'top' or a group key ('1'..'6'); the loop redraws whichever is
+    # current after each action, so running a command from a submenu returns to
+    # that submenu.
+    $view = 'top'
     while ($true) {
-        Show-Menu
-        $raw = Read-Host "Choice"
+        if ($view -eq 'top') { Show-Menu } else { Show-Submenu -Group $view }
+        $label = if ($view -eq 'top') { 'Choice' } else { "$($script:MenuGroups[$view]) >" }
+        $raw = Read-Host $label
         # Read-Host returns $null at EOF (piped/redirected input running out);
         # treat that as quit rather than crashing on a null method call.
         if ($null -eq $raw) { break }
         $choice = $raw.Trim().ToLower()
         if ($choice -in 'q', 'quit', 'exit') { break }
-        if (-not $choice) { continue }
+
+        # Resolve the input to a command id to run ($run), or handle navigation.
+        $run = $null
+        if ($view -eq 'top') {
+            if (-not $choice) { continue }
+            if ($script:MenuGroups.Contains($choice)) { $view = $choice; continue }  # open a group
+            if ($choice -in '0', 'r', 'a', 'v') {
+                $run = $choice                                                        # global quick action
+            } elseif ($choice.Length -ge 2 -and $script:ValidIds.ContainsKey($choice)) {
+                $run = $choice                                                        # 2-digit direct jump
+            } else {
+                Write-Warn "Pick a group (1-6), a command number (e.g. 33), a) attach, or q) quit."
+                Read-Host "Press Enter to continue" | Out-Null
+                continue
+            }
+        } else {
+            if (-not $choice -or $choice -in 'b', 'back') { $view = 'top'; continue }  # back to top
+            if ($script:ValidIds.ContainsKey($choice)) {
+                $run = $choice
+            } else {
+                Write-Warn "Unknown choice '$choice'. Type a listed number, b) back, or q) quit."
+                Read-Host "Press Enter to continue" | Out-Null
+                continue
+            }
+        }
+
         try {
-            Invoke-MenuChoice -Choice $choice
+            Invoke-MenuChoice -Choice $run
         } catch {
             Write-Err $_.Exception.Message
             if ($VerbosePreference -eq 'Continue') { Write-Host $_.ScriptStackTrace -ForegroundColor DarkGray }
