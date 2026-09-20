@@ -176,14 +176,74 @@ with `[37]` and try **BinDiff** (§3B) instead.
 
 ### B. BinDiff — fuzzy, best when the version is close but not exact
 
-If you could only find a *newer or older* core than the badge's, FID's exact
-hashing will miss a lot; BinDiff's structural matching is far more forgiving and
-gives a confidence per function.
+If FID's exact hashing leaves too much unnamed — a `-dirty` build, or you could
+only get a *newer/older* core than the badge's — BinDiff matches functions
+*structurally* (call graph + flow shape), so it tolerates codegen differences
+and gives a similarity/confidence score per function. It's Google's free
+tooling, in two pieces:
 
-1. Install the **BinExport** plugin for Ghidra and the **BinDiff** tool.
-2. Export both the **reference** and the **badge** programs to `.BinExport`.
-3. Diff them in BinDiff; review matches (sort by confidence) and **port the
-   names** from the reference onto the badge for the high-confidence pairs.
+- **BinExport** — a Ghidra *extension* that exports a program to a `.BinExport`
+  file (and imports diff results back). Runs inside Ghidra.
+- **BinDiff** — the standalone differ that compares two `.BinExport` files and
+  produces a `.BinDiff` results database.
+
+Both are at <https://github.com/google/bindiff/releases> (BinDiff bundles the
+matching BinExport Ghidra extension). **Match the versions to your Ghidra**
+(Help → About — this image ships Ghidra **12.1.3**); an extension built for a
+different Ghidra major won't load.
+
+#### How the pieces connect here
+
+Ghidra runs **inside the `[34]` container**; BinDiff is a desktop app. So the
+export happens in the container, the `.BinExport` files travel through the
+shared **`/work`** mount, and you run BinDiff wherever it's installed (your
+Windows host is simplest). Everything meets in the workspace.
+
+#### Setup (one time)
+
+1. **Install the BinExport extension into the container Ghidra.** From the
+   `[34]` GUI: **File → Install Extensions → `+`**, point it at the BinExport
+   zip for Ghidra 12.x (download it on the host and drop it in `/work` so the
+   dialog can reach it, or fetch inside the container). Restart Ghidra when
+   prompted, then in the CodeBrowser enable it: **File → Configure → Configure
+   All Plugins → filter `BinExport` → tick it** (same drill as `FidPlugin`).
+2. **Install BinDiff on your host** from the releases page (Windows installer).
+   You'll open `.BinExport` files with it.
+
+#### Use
+
+1. **Export both programs to `/work`** (so they land in the workspace). Open the
+   **badge** program → **File → Export Program… → format *Binary BinExport*** →
+   save to `/work/reports/ghidra/binexport/badge.BinExport`. Do the same for the
+   **reference / SDK-libs** program(s) →
+   `/work/reports/ghidra/binexport/reference.BinExport`. (Right-click the
+   listing also has an *Export* action in some versions.)
+2. **Diff them.** On the host, open BinDiff and create a new diff (**File → New
+   Diff**) with **primary = the badge**, **secondary = the reference**. The
+   files are in `workspace/<target>/reports/ghidra/binexport/`. Or from the CLI:
+   `bindiff --primary badge.BinExport --secondary reference.BinExport --output_dir .`
+   → produces a `.BinDiff` results file.
+3. **Review matches.** In BinDiff's matched-functions view, sort by
+   **confidence** (and similarity). High-confidence rows are safe to trust;
+   low-confidence ones are guesses — skim before accepting.
+4. **Port the names back into Ghidra.** With the BinExport extension installed,
+   open the badge program in Ghidra and use its **BinDiff results import** to
+   load the `.BinDiff` file and **apply matched names/comments** onto the badge
+   (accept high-confidence matches; skip or eyeball the rest). The decompiler
+   then shows the ported names, same as FID. (If your version can't import
+   results into Ghidra, BinDiff can still write the names — export the matched
+   symbols and rename in Ghidra, or work from BinDiff's view.)
+
+#### Tips
+
+- **Primary = badge, secondary = reference** — you're porting names *onto* the
+  badge, so it must be the primary.
+- Diff against the **SDK `.a` libs** program (from §3A step 0), not just
+  `reference.elf` — same coverage argument: more functions to match.
+- BinDiff and FID stack: run FID first for the exact-match wins, then BinDiff to
+  mop up what FID's hashing missed.
+- Re-run `ExportArtifacts.java` (§5) afterwards so `decompiled.c` / `code-leads.txt`
+  pick up the ported names.
 
 ## 4. Using a different version (newer or older)
 
