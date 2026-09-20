@@ -125,6 +125,22 @@ if [ -n "$BADGE_IDF" ] && [ -n "$CORE_IDF" ]; then
     if [ "$BADGE_IDF" = "$CORE_IDF" ]; then IDF_MATCH="yes"; else IDF_MATCH="no"; fi
 fi
 
+# Copy the precompiled static libs into the workspace. reference.elf only holds
+# the SDK functions the sketch linked (hundreds); these .a archives hold the
+# WHOLE SDK (thousands) with symbols - and they're the exact binaries this core
+# ships, so FID/BinDiff against them is what actually names most of the dump.
+# The ghidra container can't reach the arduino container's filesystem, so they
+# have to live in the shared workspace.
+LIB_COUNT=0
+LIB_OUT=""
+if [ -n "$LIBDIR" ]; then
+    LIB_OUT="$OUT/lib"
+    mkdir -p "$LIB_OUT"
+    cp "$LIBDIR"/*.a "$LIB_OUT/" 2>/dev/null || true
+    LIB_COUNT="$(find "$LIB_OUT" -name '*.a' 2>/dev/null | wc -l | tr -d ' ')"
+    LIB_MB="$(du -sm "$LIB_OUT" 2>/dev/null | cut -f1 || echo '?')"
+fi
+
 {
     echo "core:          arduino-esp32 $VER"
     echo "chip:          $CHIP"
@@ -134,13 +150,16 @@ fi
     echo "badge_idf:     ${BADGE_IDF:-unknown}"
     echo "core_idf:      ${CORE_IDF:-unknown}"
     echo "idf_match:     $IDF_MATCH"
-    [ -n "$LIBDIR" ] && echo "prebuilt_libs: $LIBDIR   (path inside the arduino container)"
+    [ "$LIB_COUNT" -gt 0 ] && echo "sdk_libs:      reference/arduino-esp32-${VER}/lib/   ($LIB_COUNT .a archives - import these into Ghidra for full FID coverage)"
 } > "$OUT/REFERENCE.txt"
 
 echo
 echo "[+] Reference build ready:"
-echo "    reference/arduino-esp32-${VER}/reference.elf   (symbolised - feed to Ghidra FunctionID)"
-[ -n "$LIBDIR" ] && echo "    prebuilt libs (in container): $LIBDIR"
+echo "    reference/arduino-esp32-${VER}/reference.elf   (symbolised - a quick FID starter)"
+if [ "$LIB_COUNT" -gt 0 ]; then
+    echo "    reference/arduino-esp32-${VER}/lib/   ($LIB_COUNT .a archives, ~${LIB_MB} MB)"
+    echo "    ^ import THESE for real coverage: reference.elf only has the linked subset."
+fi
 echo
 echo "[*] IDF check:  badge=${BADGE_IDF:-?}   this core (arduino-esp32 $VER)=${CORE_IDF:-?}"
 case "$IDF_MATCH" in

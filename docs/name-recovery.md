@@ -29,8 +29,9 @@ the badge's chip, into the workspace:
 
 ```
 reference/arduino-esp32-<version>/
-  reference.elf     <- symbolised; feed this to Ghidra
-  REFERENCE.txt     <- what was built; path to the prebuilt libs too
+  reference.elf     <- symbolised sketch build; a quick FID starter (linked subset only)
+  lib/*.a           <- the core's full precompiled SDK libs; import THESE for real coverage
+  REFERENCE.txt     <- what was built, the IDF match verdict, and the lib count
 ```
 
 The default *full* profile references WiFi / HTTP / ESP-NOW / BLE / mbedtls, so
@@ -122,6 +123,16 @@ appears (top level, or under **Tools**). If your build only lists it under an
 *Experimental* category, enable it there; if it's genuinely absent, use BinDiff
 (§3B) instead.
 
+0. **Import the SDK libraries — this is what actually gives coverage.**
+   `reference.elf` alone only contains the few hundred SDK functions the sketch
+   *linked*; your badge uses far more, so ingesting only the ELF leaves most
+   functions unnamed. `[37]` copies the core's full precompiled static libs to
+   **`/work/reference/arduino-esp32-<version>/lib/`** (dozens of `.a` archives,
+   the exact binaries the badge linked against). **Batch-import that `lib/`
+   folder** (File → Batch Import, or Import File on the folder), let Ghidra
+   auto-analyze the imported programs, and populate the FidDb from *those* (plus
+   `reference.elf`). That's thousands of functions to match against instead of
+   hundreds.
 1. **Function ID → Create new empty FidDb** → e.g. `esp32s3-idf447.fidb`.
 2. **Function ID → Populate FidDb from Programs.** This opens a dialog of text
    boxes — fill it (values for the arduino-esp32 2.0.16 / S3 example):
@@ -232,5 +243,14 @@ and `code-leads.txt` were written by the earlier headless run and still say
 - **Nothing to import in the GUI — no `seg_*.bin`.** Those come from `[33]`, not
   acquire/`[12]`. If `reports/ghidra/` is empty, run `[33]` once; it writes the
   segments into the shared `/work`, so `[34]` then sees them (see §3 step 0).
+- **Still lots of `FUN_*` after FunctionID.** Almost always because you ingested
+  only `reference.elf` (the linked subset, a few hundred functions). Import the
+  **`reference/.../lib/*.a`** archives and populate the FidDb from those too —
+  that's the whole SDK (§3A step 0). If the ingest count was in the hundreds,
+  this is it. Also: FID skips very small and non-unique functions by design, so
+  a residue of `FUN_*` is normal — and if the count is *still* low after the
+  libs, the codegen differs enough that **BinDiff** (§3B) will do better than
+  FID's exact hashing. Remember the goal isn't 100%: once the SDK noise is named,
+  your `code-leads.txt` shortlist is the handful that matter.
 
 See also [ghidra.md](ghidra.md).
