@@ -95,12 +95,37 @@ cp "$ELF" "$OUT/reference.elf"
 # these too for extra coverage beyond what the sketch links.
 LIBDIR="$(find "$ARDUINO_DIRECTORIES_DATA" -type d -path "*esp32-arduino-libs*/${CHIP}" 2>/dev/null | head -1 || true)"
 
+# --- Deterministic IDF check ------------------------------------------------
+# arduino-esp32 pins one ESP-IDF per release, and the prebuilt-libs path encodes
+# it (idf-release_v4.4_<date>). Compare that (major.minor) to the badge's own IDF
+# (from the analysis metadata) so you KNOW this core's IDF line matches before
+# spending time in Ghidra - no version table to trust, just the two values.
+maj_min() { printf '%s' "$1" | grep -oE '[0-9]+\.[0-9]+' | head -1; }
+
+CORE_IDF="$(maj_min "$(printf '%s' "$LIBDIR" | grep -oE 'v[0-9]+\.[0-9]+' | head -1)")"
+
+BADGE_IDF=""
+if [ -f "$WORK/meta/parts_manifest.json" ]; then
+    BADGE_IDF="$(maj_min "$(grep -oE 'idf=v?[0-9]+\.[0-9]+' "$WORK/meta/parts_manifest.json" | head -1)")"
+fi
+if [ -z "$BADGE_IDF" ] && [ -f "$WORK/reports/triage.txt" ]; then
+    BADGE_IDF="$(maj_min "$(grep -oE 'esp-idf: v[0-9]+\.[0-9]+' "$WORK/reports/triage.txt" | head -1)")"
+fi
+
+IDF_MATCH="unknown"
+if [ -n "$BADGE_IDF" ] && [ -n "$CORE_IDF" ]; then
+    if [ "$BADGE_IDF" = "$CORE_IDF" ]; then IDF_MATCH="yes"; else IDF_MATCH="no"; fi
+fi
+
 {
     echo "core:          arduino-esp32 $VER"
     echo "chip:          $CHIP"
     echo "board:         $BOARD"
     echo "profile:       $PROFILE"
     echo "reference_elf: reference/arduino-esp32-${VER}/reference.elf"
+    echo "badge_idf:     ${BADGE_IDF:-unknown}"
+    echo "core_idf:      ${CORE_IDF:-unknown}"
+    echo "idf_match:     $IDF_MATCH"
     [ -n "$LIBDIR" ] && echo "prebuilt_libs: $LIBDIR   (path inside the arduino container)"
 } > "$OUT/REFERENCE.txt"
 
@@ -108,6 +133,14 @@ echo
 echo "[+] Reference build ready:"
 echo "    reference/arduino-esp32-${VER}/reference.elf   (symbolised - feed to Ghidra FunctionID)"
 [ -n "$LIBDIR" ] && echo "    prebuilt libs (in container): $LIBDIR"
+echo
+echo "[*] IDF check:  badge=${BADGE_IDF:-?}   this core (arduino-esp32 $VER)=${CORE_IDF:-?}"
+case "$IDF_MATCH" in
+    yes) echo "    MATCH - this core's IDF line matches the badge. Good version to FID against." ;;
+    no)  echo "    MISMATCH - rebuild with a core on the badge's IDF line and FID that instead:"
+         echo "               IDF v4.4.x -> arduino-esp32 2.0.x ;  IDF v5.1.x -> 3.0.x ;  v5.3.x -> 3.1.x." ;;
+    *)   echo "    could not compare (missing badge IDF or libs path) - check reports/triage.txt by hand." ;;
+esac
 echo
 echo "    Apply the symbols to the badge in Ghidra - see docs/name-recovery.md."
 echo "    Wrong version? Re-run with another version arg and use BinDiff instead"

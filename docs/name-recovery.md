@@ -38,6 +38,41 @@ those SDK functions are linked in with symbols (the subsystems a badge actually
 uses). It suggests a core version from the detected IDF; press Enter to accept,
 or type any version.
 
+### Which version to target — and how `[37]` confirms it
+
+You don't guess. The toolkit already extracts the two facts that pin the core
+version, and `[37]` checks its own answer:
+
+1. **Read them off `reports/triage.txt`** (from `[12]`/`[13]`). The app-descriptor
+   line prints the **IDF version** and the **build date**, e.g.:
+
+   ```
+   project 'arduino-lib-builder' version 'esp-idf: v4.4.7 38eeba213a' idf v4.4.7-dirty built Mar  5 2024 12:12:53
+   ```
+
+   arduino-esp32 pins one IDF per release, so the IDF line + build date place you
+   in a release line (IDF **v4.4.x → arduino-esp32 2.0.x**, **v5.1.x → 3.0.x**,
+   **v5.3.x → 3.1.x**); the build date breaks ties within a line. `[37]` seeds its
+   suggested version from this.
+
+2. **`[37]` then verifies it deterministically** — no version table to trust.
+   arduino-esp32 encodes its bundled IDF in the prebuilt-libs path
+   (`idf-release_v4.4_<date>`), so after building, `[37]` compares that
+   (major.minor) against the badge's own IDF and prints:
+
+   ```
+   [*] IDF check:  badge=4.4   this core (arduino-esp32 2.0.16)=4.4
+       MATCH - this core's IDF line matches the badge. Good version to FID against.
+   ```
+
+   A **MISMATCH** (e.g. you grabbed a 3.0.x core → IDF 5.1) tells you to rebuild
+   on the badge's IDF line before wasting time in Ghidra. The verdict is also
+   written to `REFERENCE.txt` as `idf_match: yes|no`.
+
+3. **Patch level** (4.4.6 vs 4.4.7) isn't distinguished by the IDF-line check —
+   pick among same-line releases by the **FID match count** (§3A): build a
+   candidate + a neighbour with `[37]`, apply each, keep the one that names more.
+
 ## 3. Apply the symbols in Ghidra
 
 Applying is interactive, in the GUI (`[34]`). Two matching methods, depending on
