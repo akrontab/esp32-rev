@@ -79,7 +79,7 @@ print([(f.name, f.size) for f in r.files])"
 
 ## Docker build fails
 
-Re-run with no-cache from `[2]`. If a Debian package genuinely disappeared,
+Re-run with no-cache from Build images (Setup `[1]` → `[2]`). If a Debian package genuinely disappeared,
 the failure names it; see [decisions.md D10](decisions.md#d10--radare2-dropped-from-the-analysis-image)
 for how the last such case was handled.
 
@@ -129,8 +129,8 @@ tool directly (or use the container/host shell) if you need captured output.
 
 If it prints "Starting virtual display + VNC" and then dies, the image's
 TigerVNC (>= 1.15) is refusing an unauthenticated non-local bind. Fixed in
-`gh-gui.sh`; **rebuild the ghidra image** to pick it up (`[2] → 5`, or
-`Build-Image -Name ghidra` — fast, only the script layer rebuilds). If it starts
+`gh-gui.sh`; **rebuild the ghidra image** to pick it up (Setup `[1]` → Build
+images `[2]` → ghidra `[5]` — fast, only the script layer rebuilds). If it starts
 but exits after a couple of seconds, that's the same fix (the container now
 waits on the noVNC bridge, not the `ghidraRun` launcher, which forks and
 returns). Full name-recovery flow and the "where's Function ID?" plugin gotcha

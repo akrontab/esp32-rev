@@ -210,7 +210,7 @@ The hunt then reports `defaults DISABLED (#!replace)` so the narrower search
 is never a silent surprise.
 
 To change the built-in list permanently, edit `DEFAULT_PATTERNS` at the top of
-`scripts/container/analysis/fw-hunt.sh` and rebuild the analysis image (`[2]`).
+`scripts/container/analysis/fw-hunt.sh` and rebuild the analysis image (Setup `[1]` → Build images `[2]` → `[2]`).
 
 ### Regex flavour — the gotcha
 

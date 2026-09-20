@@ -219,7 +219,7 @@ and `code-leads.txt` were written by the earlier headless run and still say
   dies.** The base image's TigerVNC (>= 1.15) refuses `-SecurityTypes None` on a
   non-local bind. Fixed in `gh-gui.sh` (binds VNC to localhost inside the
   container; noVNC still reaches it). **Rebuild the ghidra image** to pick up the
-  fix: menu `[2] → 5`, or `Build-Image -Name ghidra` (fast — only the script
+  fix: menu Setup `[1]` → Build images `[2]` → ghidra `[5]` (fast — only the script
   layer changes, the Ghidra download layer is cached).
 - **`[34]` starts then exits ~2 s later even though VNC came up.** Same fix:
   `ghidraRun` is a launcher that forks the JVM and returns, so the container now
