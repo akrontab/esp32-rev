@@ -124,3 +124,14 @@ nvidia/cuda:12.4.1-base-ubuntu22.04 nvidia-smi` works. The image must use the
 Interactive use is fine; this only happens when driving the menu with *piped*
 input (e.g. scripted testing) for actions that stream subprocess output. Run the
 tool directly (or use the container/host shell) if you need captured output.
+
+## `[34]` Ghidra GUI: container exits instead of starting
+
+If it prints "Starting virtual display + VNC" and then dies, the image's
+TigerVNC (>= 1.15) is refusing an unauthenticated non-local bind. Fixed in
+`gh-gui.sh`; **rebuild the ghidra image** to pick it up (`[2] → 5`, or
+`Build-Image -Name ghidra` — fast, only the script layer rebuilds). If it starts
+but exits after a couple of seconds, that's the same fix (the container now
+waits on the noVNC bridge, not the `ghidraRun` launcher, which forks and
+returns). Full name-recovery flow and the "where's Function ID?" plugin gotcha
+are in [name-recovery.md](name-recovery.md).

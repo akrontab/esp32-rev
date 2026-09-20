@@ -40,22 +40,42 @@ or type any version.
 
 ## 3. Apply the symbols in Ghidra
 
-Two ways, depending on how well the version lines up. Both are interactive, in
-the GUI (`[34]`).
+Applying is interactive, in the GUI (`[34]`). Two matching methods, depending on
+how well the version lines up (§3A FunctionID, §3B BinDiff).
+
+### Getting set up in the GUI
+
+1. **Launch `[34]`** and open `http://localhost:6080/vnc.html` → Connect.
+   (If `[34]` starts and immediately dies, rebuild the ghidra image first — see
+   *Troubleshooting*.)
+2. **Load the badge** into the CodeBrowser: import the primary segment
+   `reports/ghidra/seg_<n>_<addr>.bin` as **Raw Binary**, language
+   `Xtensa:LE:32:default` (or `RISCV:LE:32:default` for C3/C6), base address from
+   `reports/ghidra/segments.json`; add the other segments as memory blocks at
+   their addresses (**Window → Memory Map**); then **Analysis → Auto Analyze**.
+3. **Import the reference**: **File → Import File** → `reference/arduino-esp32-<version>/reference.elf`, and auto-analyze it (it keeps its symbols).
 
 ### A. FunctionID — fast, native, best when the version matches
 
 FID hashes each function's instruction bytes (operands/relocations partially
 masked), so it tolerates *address* differences but not *codegen* differences.
 
-1. Import & auto-analyze **`reference.elf`** (it keeps its symbols).
-2. **Tools → Function ID → Create new empty FidDb** → e.g. `esp32s3-idf447.fidb`.
-3. **Function ID → Populate FidDb from Programs** → pick the reference program
+**Enable the plugin first** (it's not on by default, and the plain Configure
+view hides it): in the **CodeBrowser** window — not the project manager —
+**File → Configure → the plug / "Configure All Plugins" icon (top-right)**,
+filter for **`Fid`**, tick **`FidPlugin`**, OK. A **Function ID** menu then
+appears (top level, or under **Tools**). If your build only lists it under an
+*Experimental* category, enable it there; if it's genuinely absent, use BinDiff
+(§3B) instead.
+
+1. **Function ID → Create new empty FidDb** → e.g. `esp32s3-idf447.fidb`.
+2. **Function ID → Populate FidDb from Programs** → pick `reference.elf`
    (and/or ingest the prebuilt `.a` libs named in `REFERENCE.txt`); set a
    library name/version.
-4. Open the **badge** program (your `parts/app0.bin` project),
-   **Function ID → Choose active FidDbs** → tick the new DB, then re-run
-   analysis (or the FunctionID analyzer). Matches get named automatically.
+3. Open the **badge** program → **Function ID → Choose active FidDbs** → tick
+   the new DB, then re-run analysis (**Analysis → One Shot → Function ID**, or a
+   full Auto Analyze). Matches get named automatically, and the decompiler
+   re-decompiles so the names appear at every call site.
 
 ### B. BinDiff — fuzzy, best when the version is close but not exact
 
@@ -87,7 +107,15 @@ So: the script takes care of the **build** for any version; the **apply** step
 (§3) is the same procedure every time — FID for an exact match, BinDiff for a
 near one.
 
-## 5. Expectations, and how it fits the rest
+## 5. Push the names back into `decompiled.c`
+
+The names are live in the decompiler window, but `reports/ghidra/decompiled.c`
+and `code-leads.txt` were written by the earlier headless run and still say
+`FUN_*`. To regenerate them with the recovered names: **Window → Script Manager
+→ Manage Script Directories → add `/opt/re/bin`**, then run **`ExportArtifacts.java`**
+(and `Enrich.java`). A later `grep` / `[35]` / `gh-leads` then reads named code.
+
+## 6. Expectations, and how it fits the rest
 
 - Because of the `-dirty` patches and exact-compiler sensitivity, you won't name
   100%. But even a close build names a **large fraction** of the SDK — enough to
@@ -98,5 +126,22 @@ near one.
   `func-strings.txt` for context. ROM naming (`rom-syms.py`) covers the mask ROM
   cheaply; this covers the IDF/Arduino layer — together that's most of the
   boilerplate gone.
+
+## Troubleshooting (found the hard way)
+
+- **`[34]` starts, prints "Starting virtual display + VNC", then the container
+  dies.** The base image's TigerVNC (>= 1.15) refuses `-SecurityTypes None` on a
+  non-local bind. Fixed in `gh-gui.sh` (binds VNC to localhost inside the
+  container; noVNC still reaches it). **Rebuild the ghidra image** to pick up the
+  fix: menu `[2] → 5`, or `Build-Image -Name ghidra` (fast — only the script
+  layer changes, the Ghidra download layer is cached).
+- **`[34]` starts then exits ~2 s later even though VNC came up.** Same fix:
+  `ghidraRun` is a launcher that forks the JVM and returns, so the container now
+  waits on the noVNC bridge, not the launcher. Rebuild as above.
+- **No "Function ID" entry in File → Configure.** You're either in the project
+  manager window (config is per-tool — use the **CodeBrowser**), or looking at
+  the grouped view. Click **"Configure All Plugins"** (plug icon), filter `Fid`,
+  enable **`FidPlugin`**. See §3A. No FunctionID module at all → use BinDiff (§3B)
+  or rename manually (press **L** on a function).
 
 See also [ghidra.md](ghidra.md).
