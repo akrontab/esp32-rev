@@ -361,6 +361,29 @@ where it costs the most (`[36]`'s many images), on by default for the single
 
 ---
 
+## D22 — `[38]` builds the FID source project headless (automate the analyse)
+
+**Decision.** Naming the SDK needs the whole precompiled library set analysed in
+Ghidra, and each `.a` is thousands of tiny objects — a brutal manual GUI job. So
+`[38]` (`gh-fid.sh`) does it unattended: `analyzeHeadless -import <reference.elf
++ lib/> -recursive` with Ghidra's own **FunctionIDHeadlessPre/Postscript** (FID
+and Library-ID analysers off, scalar-operand on, switch-fix), into a saved
+project at `reference/arduino-esp32-<ver>/fidsrc/`. The GUI step shrinks to: open
+that project, Populate a FidDb (fast — analysis is done), attach to the badge,
+run the analyser. An `only-big` mode imports just the core WiFi/BLE/crypto libs
+for a much faster run.
+
+**Why.** The residual-`FUN_*` complaint traced to ingesting only `reference.elf`
+(the linked subset, hundreds of functions) because analysing all 98 libs by hand
+in the GUI is impractical. Headless import+analyse removes exactly that barrier
+with stock Ghidra scripts (no fragile FID-API Java). The one genuinely
+GUI-bound, prompt-heavy step — `CreateMultipleLibraries` populate, which even has
+a dynamic prompt title — is left interactive rather than driven blind through
+`.properties`. Verified that headless `-import` expands `.a` members (they load
+as Xtensa ELF objects) and analyses them with the FID pre/post scripts.
+
+---
+
 ## Validation
 
 The format parsers were checked against ground truth from Espressif's own
@@ -375,6 +398,7 @@ tooling rather than assumed correct.
 | `gh-leads` runtime-string + operand signals | Synthesised `decompiled.c` | A stack-packed constant `0x656d6b636f6c6e75` decodes to `"unlockme"`; a `strcmp` operand `"L3tM31n!"` is extracted; base32 alphabet flagged. |
 | `rom-syms` ld parser | Synthesised `esp32s3.rom.ld` | The three `PROVIDE(name=0xADDR)` lines become address-sorted `addr<TAB>name` rows; a non-`PROVIDE` assignment is ignored. |
 | `[37]` IDF match check | Real 2.0.16 core + lhc2025 `parts_manifest` | Core IDF read from the core's `platform.txt` (`IDF_VER="v4.4.7-dirty"`) = `4.4.7`, badge `idf=v4.4.7` = `4.4.7` → `match=yes`; full patch-level, no version table. Run exits 0 (fixed a `set -e` + grep-no-match abort, and the 2.0.x `tools/sdk/<chip>/lib` layout vs 3.0.x `esp32-arduino-libs`). |
+| `[38]` headless FID source (`gh-fid.sh`) | Real `reference.elf` + `libjsmn.a` in the ghidra image | `-import ... -recursive` expands the `.a` (member loads as Xtensa ELF, `e_machine=0x5e`), the FID pre/post scripts run, and a saved `fidsrc.gpr`/`fidsrc.rep` project lands in the workspace. |
 | `nvsfmt`                 | Partition built by `esp-idf-nvs-partition-gen` from a CSV   | Namespaces resolved; string, u8, u32, blob-data and blob-index entries all decoded correctly             |
 | `spiffsfmt`              | Image built by ESP-IDF's `spiffsgen.py` (v5.2.1)            | All 4 files extracted **byte-identical**, including a 10 KiB multi-page file and a nested path           |
 

@@ -351,6 +351,33 @@ function Invoke-ArduinoReference {
         -ExtraArgs @('-v', 'esp32-re-arduino-cache:/root/.arduino15')
 }
 
+function Invoke-GhidraFidSource {
+    if (-not (Assert-Target)) { return }
+
+    $refRoot = Get-ArtifactPath 'reference'
+    if (-not (Test-Path $refRoot)) { Write-Warn "No reference\ yet - build one with [37] first."; return }
+    $dirs = @(Get-ChildItem $refRoot -Directory | Where-Object { $_.Name -like 'arduino-esp32-*' } | Sort-Object Name)
+    if (-not $dirs) { Write-Warn "No arduino-esp32-* reference - build one with [37] first."; return }
+
+    if ($dirs.Count -eq 1) {
+        $ref = $dirs[0].Name
+    } else {
+        Write-Host "  Reference builds:"
+        for ($i = 0; $i -lt $dirs.Count; $i++) { Write-Host ("   {0}) {1}" -f ($i + 1), $dirs[$i].Name) }
+        $pick = Read-Host "Which [1]"; if (-not $pick) { $pick = '1' }
+        $idx = 0
+        if (-not [int]::TryParse($pick, [ref]$idx) -or $idx -lt 1 -or $idx -gt $dirs.Count) { Write-Warn "Not a listed choice."; return }
+        $ref = $dirs[$idx - 1].Name
+    }
+
+    Write-Info "Headless import + analysis of the SDK objects into a Ghidra project - this does the"
+    Write-Info "slow part unattended so [34] just opens it and Populates a FidDb. Can take a while."
+    $big = Confirm-Action "Import only the core SDK libs (much faster) instead of all of them?"
+    $cmd = @('gh-fid.sh', "reference/$ref")
+    if ($big) { $cmd += 'only-big' }
+    Invoke-Container -Image ghidra -Command $cmd
+}
+
 function Invoke-HashId {
     if (-not (Assert-Target)) { return }
     Write-Info "Scanning the workspace for hash-shaped strings (strings, NVS, BLE, extracted files)."
@@ -727,6 +754,7 @@ $script:MenuCommands = @(
     [pscustomobject]@{ Id = '34'; Group = '5'; Section = 'Disassembly  (Ghidra: Xtensa + RISC-V)';    Label = 'Ghidra GUI (noVNC :6080)' }
     [pscustomobject]@{ Id = '36'; Group = '5'; Section = 'Disassembly  (Ghidra: Xtensa + RISC-V)';    Label = 'Analyze full dump (bootloader + all app slots)' }
     [pscustomobject]@{ Id = '37'; Group = '5'; Section = 'Disassembly  (Ghidra: Xtensa + RISC-V)';    Label = 'Build SDK reference for name recovery' }
+    [pscustomobject]@{ Id = '38'; Group = '5'; Section = 'Disassembly  (Ghidra: Xtensa + RISC-V)';    Label = 'Build FID source project (headless import+analyse)' }
 
     [pscustomobject]@{ Id = '21'; Group = '6'; Section = 'shells';    Label = 'Shell in esptool container' }
     [pscustomobject]@{ Id = '22'; Group = '6'; Section = 'shells';    Label = 'Shell in analysis container' }
@@ -818,6 +846,7 @@ function Invoke-MenuChoice {
         '34' { if (Assert-Target) { Invoke-GhidraGui } }
         '36' { Invoke-GhidraDumpAnalyze }
         '37' { Invoke-ArduinoReference }
+        '38' { Invoke-GhidraFidSource }
         '27' {
             $a = Read-Host "Badge BD address"
             $c = Read-Host "Notify characteristic UUID"

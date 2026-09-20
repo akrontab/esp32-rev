@@ -123,31 +123,29 @@ appears (top level, or under **Tools**). If your build only lists it under an
 *Experimental* category, enable it there; if it's genuinely absent, use BinDiff
 (§3B) instead.
 
-0. **Import the SDK libraries — this is what actually gives coverage.**
+0. **Get the SDK libraries analysed — this is what actually gives coverage.**
    `reference.elf` alone only contains the few hundred SDK functions the sketch
    *linked*; your badge uses far more, so ingesting only the ELF leaves most
-   functions unnamed. `[37]` copies the core's full precompiled static libs to
-   **`/work/reference/arduino-esp32-<version>/lib/`** (dozens of `.a` archives,
-   the exact binaries the badge linked against). Batch-import them:
+   functions unnamed. The fix is to feed FID the core's **full precompiled
+   static libs** (`[37]` copies them to `/work/reference/arduino-esp32-<version>/lib/`,
+   dozens of `.a` archives — the exact binaries the badge linked against). Each
+   archive is thousands of tiny objects, and FID only hashes *analysed*
+   functions, so the objects have to be imported **and analysed** first. Two ways:
 
-   1. **File → Batch Import…** → **Add** → select the
-      `/work/reference/arduino-esp32-<version>/lib/` folder (or its `*.a` files).
-      Ghidra reads each archive as a container and enumerates the object files
-      inside it — you'll see a long list.
-   2. Check the detected **Language** column reads `Xtensa:LE:32:default`
-      (`RISCV:LE:32:default` for C3/C6); set it if it's blank or wrong. Set the
-      destination **project folder** to something like `sdk-libs` (create it
-      here), then **Import**. This creates one small program per object — there
-      will be many.
-   3. **Analyze them so functions get defined** (FID hashes *defined* functions):
-      open the `sdk-libs` folder, select the programs, and run analysis
-      (**Analysis → Auto Analyze**). The objects are tiny so each is quick, but
-      there are a lot — let it finish. Defaults are fine.
+   **Recommended — `[38]` does it headless.** `[38] Build FID source project`
+   imports `reference.elf` + all the `.a` members and analyses them unattended
+   (using Ghidra's FID headless scripts), into
+   `reference/arduino-esp32-<version>/fidsrc/`. It can take a while — that's the
+   slow part, now off your hands. (Choose "only the core SDK libs" when it asks
+   for a much faster run covering the WiFi/BLE/crypto bulk.) Then in `[34]`:
+   **File → Open Project → `/work/reference/arduino-esp32-<version>/fidsrc/fidsrc.gpr`** —
+   the programs are already analysed, so you skip straight to populating (step 2,
+   Root Folder `/`).
 
-   If analyzing everything is too heavy, import just the big ones the badge
-   actually uses — `libesp32.a`, `libnet80211.a`, `libbt.a`, `libmbedtls*.a`,
-   `libc.a`, `libwpa_supplicant.a` — which cover most of a WiFi/BLE/crypto badge.
-   Then point the Populate dialog's **Root Folder** at `sdk-libs` (next step).
+   **Manual — batch import in the GUI.** File → Batch Import… → add the
+   `.../lib/` folder; confirm the **Language** column is `Xtensa:LE:32:default`
+   (`RISCV:...` for C3/C6); import into an `sdk-libs` folder; then select it and
+   **Analysis → Auto Analyze**. Slow and hands-on (many objects) — prefer `[38]`.
 1. **Function ID → Create new empty FidDb** → e.g. `esp32s3-idf447.fidb`.
 2. **Function ID → Populate FidDb from Programs.** This opens a dialog of text
    boxes — fill it (values for the arduino-esp32 2.0.16 / S3 example):
@@ -320,10 +318,10 @@ and `code-leads.txt` were written by the earlier headless run and still say
   acquire/`[12]`. If `reports/ghidra/` is empty, run `[33]` once; it writes the
   segments into the shared `/work`, so `[34]` then sees them (see §3 step 0).
 - **Still lots of `FUN_*` after FunctionID.** Almost always because you ingested
-  only `reference.elf` (the linked subset, a few hundred functions). Import the
-  **`reference/.../lib/*.a`** archives and populate the FidDb from those too —
-  that's the whole SDK (§3A step 0). If the ingest count was in the hundreds,
-  this is it. Also: FID skips very small and non-unique functions by design, so
+  only `reference.elf` (the linked subset, a few hundred functions). Get the full
+  SDK into the FidDb: run **`[38]`** to import+analyse all the `.a` libs headless,
+  then Populate from that `fidsrc` project (§3A step 0). If the ingest count was
+  in the hundreds, this is it. Also: FID skips very small and non-unique functions by design, so
   a residue of `FUN_*` is normal — and if the count is *still* low after the
   libs, the codegen differs enough that **BinDiff** (§3B) will do better than
   FID's exact hashing. Remember the goal isn't 100%: once the SDK noise is named,

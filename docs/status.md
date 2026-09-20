@@ -28,6 +28,7 @@ writes flash/eFuses — see [decisions.md](decisions.md) D17).
 | Decompilation triage → ranked `code-leads.txt` | auto after `33`/`36` | validated (ranking logic) |
 | Ghidra enrichment: ROM names + string xrefs (`Enrich`, `rom-syms.py`) | auto after `33`/`36` | rom-syms validated; Enrich by inspection (needs container) |
 | SDK reference build for name recovery (`arduino` image) | `37` | built (needs image + network to validate); apply is a GUI procedure |
+| Headless FID source project (import+analyse SDK libs) | `38` | built (`.a` import+analyse verified); GUI still does the FidDb populate |
 | Workspace: reports / verify / summary | `18`–`20` | done |
 
 Container images: `esp32-re/esptool`, `/analysis`, `/hashcat`, `/ghidra`.
