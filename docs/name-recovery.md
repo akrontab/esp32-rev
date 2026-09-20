@@ -61,7 +61,12 @@ how well the version lines up (§3A FunctionID, §3B BinDiff).
    address from `reports/ghidra/segments.json`; add the other segments as memory
    blocks at their addresses (**Window → Memory Map**); then **Analysis → Auto
    Analyze**.
-3. **Import the reference**: **File → Import File** → `reference/arduino-esp32-<version>/reference.elf`, and auto-analyze it (it keeps its symbols).
+3. **Import the reference**: **File → Import File**, then navigate to (or type in
+   the filename box) **`/work/reference/arduino-esp32-<version>/reference.elf`** —
+   the workspace is mounted at `/work`, and the Import dialog opens elsewhere by
+   default, so you must go to `/work`. Auto-analyze it after import (it keeps its
+   symbols). If `/work/reference/` is empty, `[37]` wasn't run for *this* target,
+   or `[34]` is mounting a different target than the one `[37]` built for.
 
 ### A. FunctionID — fast, native, best when the version matches
 
@@ -77,13 +82,45 @@ appears (top level, or under **Tools**). If your build only lists it under an
 (§3B) instead.
 
 1. **Function ID → Create new empty FidDb** → e.g. `esp32s3-idf447.fidb`.
-2. **Function ID → Populate FidDb from Programs** → pick `reference.elf`
-   (and/or ingest the prebuilt `.a` libs named in `REFERENCE.txt`); set a
-   library name/version.
+2. **Function ID → Populate FidDb from Programs.** This opens a dialog of text
+   boxes — fill it (values for the arduino-esp32 2.0.16 / S3 example):
+
+   | Field | Value | Notes |
+   |---|---|---|
+   | **Fid Database** | your `esp32s3-idf447.fidb` | where the hashes are written |
+   | **Library Family Name** | `arduino-esp32` | free-text label |
+   | **Library Version** | `2.0.16` | free-text label |
+   | **Library Variant** | `esp32s3` (or `idf4.4.7`) | free-text label |
+   | **Base Library** | *No Base Library* | leave as-is |
+   | **Root Folder** | the project folder holding `reference.elf` (usually `/`) | where it reads programs |
+   | **Language** | `Xtensa:LE:32:default` (`RISCV:...` for C3/C6) | must match the reference |
+   | **Common Symbols File** | *(blank)* | optional |
+
+   Family / Version / Variant are just labels to tell libraries apart later; the
+   ones that matter are **Fid Database**, **Root Folder**, and **Language**. The
+   `reference.elf` must already be **imported and auto-analyzed** in that Root
+   Folder, with a matching language, or nothing is ingested.
+
+   **Where the ingest count shows up:** FID populate runs from the **Ghidra
+   Project window** (front end), and reports to the log — a short summary dialog
+   at the end, and **Help → Show Log** (`application.log`; search for
+   `arduino-esp32` or `Fid`) for the function count. **0 ingested** means the
+   Root Folder / Language didn't point at the analyzed reference.
+
 3. Open the **badge** program → **Function ID → Choose active FidDbs** → tick
    the new DB, then re-run analysis (**Analysis → One Shot → Function ID**, or a
    full Auto Analyze). Matches get named automatically, and the decompiler
    re-decompiles so the names appear at every call site.
+
+**Check how much it named.** The count that matters is badge functions renamed,
+not functions ingested. Gauge it:
+- **Window → Symbol Table**, sort by name — see how many are still `FUN_*` vs
+  real names; or
+- re-run `ExportArtifacts.java` (§5) and compare `grep -c '^FUN_'
+  reports/ghidra/functions.txt` before vs after.
+
+A low match count means the core version is off — build a neighbouring version
+with `[37]` and try **BinDiff** (§3B) instead.
 
 ### B. BinDiff — fuzzy, best when the version is close but not exact
 
