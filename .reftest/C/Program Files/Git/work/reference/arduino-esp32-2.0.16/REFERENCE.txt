@@ -1,0 +1,9 @@
+core:          arduino-esp32 2.0.16
+chip:          esp32s3
+board:         esp32:esp32:esp32s3
+profile:       minimal
+reference_elf: reference/arduino-esp32-2.0.16/reference.elf
+badge_idf:     unknown
+core_idf:      4.4.7
+idf_match:     unknown
+prebuilt_libs: /root/.arduino15/packages/esp32/hardware/esp32/2.0.16/tools/sdk/esp32s3/lib   (path inside the arduino container)

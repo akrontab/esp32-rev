@@ -56,22 +56,28 @@ version, and `[37]` checks its own answer:
    suggested version from this.
 
 2. **`[37]` then verifies it deterministically** — no version table to trust.
-   arduino-esp32 encodes its bundled IDF in the prebuilt-libs path
-   (`idf-release_v4.4_<date>`), so after building, `[37]` compares that
-   (major.minor) against the badge's own IDF and prints:
+   The installed core records its exact ESP-IDF in `platform.txt`
+   (`IDF_VER="v4.4.7-dirty"`), so after building, `[37]` compares that
+   **full patch version** against the badge's own IDF and prints one of:
 
    ```
-   [*] IDF check:  badge=4.4   this core (arduino-esp32 2.0.16)=4.4
-       MATCH - this core's IDF line matches the badge. Good version to FID against.
+   [*] IDF check:  badge=4.4.7   this core (arduino-esp32 2.0.16)=4.4.7
+       MATCH - exact IDF (4.4.7). This is the right core; FID against it.
    ```
 
-   A **MISMATCH** (e.g. you grabbed a 3.0.x core → IDF 5.1) tells you to rebuild
-   on the badge's IDF line before wasting time in Ghidra. The verdict is also
-   written to `REFERENCE.txt` as `idf_match: yes|no`.
+   - **MATCH** — exact IDF; you picked right.
+   - **NEAR** — same line, different patch (e.g. badge 4.4.7 vs core 4.4.6):
+     usually still a strong FID match; try a neighbouring patch release or BinDiff
+     if it's weak.
+   - **MISMATCH** — different line (e.g. a 3.0.x core → IDF 5.1): rebuild on the
+     badge's line (v4.4.x → 2.0.x, v5.1.x → 3.0.x, v5.3.x → 3.1.x).
 
-3. **Patch level** (4.4.6 vs 4.4.7) isn't distinguished by the IDF-line check —
-   pick among same-line releases by the **FID match count** (§3A): build a
-   candidate + a neighbour with `[37]`, apply each, keep the one that names more.
+   The verdict is also written to `REFERENCE.txt` as `idf_match: yes|no`.
+
+3. So the check now resolves the **exact patch**, not just the line. If it says
+   NEAR and the FID result is disappointing, use the **FID match count** (§3A) to
+   choose among neighbouring patch releases: build each with `[37]`, apply, keep
+   the one that names more.
 
 ## 3. Apply the symbols in Ghidra
 
@@ -120,16 +126,16 @@ appears (top level, or under **Tools**). If your build only lists it under an
 2. **Function ID → Populate FidDb from Programs.** This opens a dialog of text
    boxes — fill it (values for the arduino-esp32 2.0.16 / S3 example):
 
-   | Field | Value | Notes |
-   |---|---|---|
-   | **Fid Database** | your `esp32s3-idf447.fidb` | where the hashes are written |
-   | **Library Family Name** | `arduino-esp32` | free-text label |
-   | **Library Version** | `2.0.16` | free-text label |
-   | **Library Variant** | `esp32s3` (or `idf4.4.7`) | free-text label |
-   | **Base Library** | *No Base Library* | leave as-is |
-   | **Root Folder** | the project folder holding `reference.elf` (usually `/`) | where it reads programs |
-   | **Language** | `Xtensa:LE:32:default` (`RISCV:...` for C3/C6) | must match the reference |
-   | **Common Symbols File** | *(blank)* | optional |
+   | Field                   | Value                                                    | Notes                        |
+   | ----------------------- | -------------------------------------------------------- | ---------------------------- |
+   | **Fid Database**        | your `esp32s3-idf447.fidb`                               | where the hashes are written |
+   | **Library Family Name** | `arduino-esp32`                                          | free-text label              |
+   | **Library Version**     | `2.0.16`                                                 | free-text label              |
+   | **Library Variant**     | `esp32s3` (or `idf4.4.7`)                                | free-text label              |
+   | **Base Library**        | *No Base Library*                                        | leave as-is                  |
+   | **Root Folder**         | the project folder holding `reference.elf` (usually `/`) | where it reads programs      |
+   | **Language**            | `Xtensa:LE:32:default` (`RISCV:...` for C3/C6)           | must match the reference     |
+   | **Common Symbols File** | *(blank)*                                                | optional                     |
 
    Family / Version / Variant are just labels to tell libraries apart later; the
    ones that matter are **Fid Database**, **Root Folder**, and **Language**. The

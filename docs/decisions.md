@@ -374,7 +374,7 @@ tooling rather than assumed correct.
 | `gh-leads` decompilation ranking | Synthesised `decompiled.c` + `functions.txt` + `meta/leads.json` | A `strcmp`-vs-`L3tM31n!` check ranks #1 (found-lead + comparison + keywords); crypto-const and XOR-cipher functions follow; memcpy wrapper and an SDK function score zero and are dropped. |
 | `gh-leads` runtime-string + operand signals | Synthesised `decompiled.c` | A stack-packed constant `0x656d6b636f6c6e75` decodes to `"unlockme"`; a `strcmp` operand `"L3tM31n!"` is extracted; base32 alphabet flagged. |
 | `rom-syms` ld parser | Synthesised `esp32s3.rom.ld` | The three `PROVIDE(name=0xADDR)` lines become address-sorted `addr<TAB>name` rows; a non-`PROVIDE` assignment is ignored. |
-| `[37]` IDF match check | Synthesised libs paths + `parts_manifest` | `idf-release_v4.4_.../esp32s3` vs badge `idf=v4.4.7` → match=yes; a `v5.1` core → match=no; empty libs path → unknown. Compares major.minor from data already extracted, no version table. |
+| `[37]` IDF match check | Real 2.0.16 core + lhc2025 `parts_manifest` | Core IDF read from the core's `platform.txt` (`IDF_VER="v4.4.7-dirty"`) = `4.4.7`, badge `idf=v4.4.7` = `4.4.7` → `match=yes`; full patch-level, no version table. Run exits 0 (fixed a `set -e` + grep-no-match abort, and the 2.0.x `tools/sdk/<chip>/lib` layout vs 3.0.x `esp32-arduino-libs`). |
 | `nvsfmt`                 | Partition built by `esp-idf-nvs-partition-gen` from a CSV   | Namespaces resolved; string, u8, u32, blob-data and blob-index entries all decoded correctly             |
 | `spiffsfmt`              | Image built by ESP-IDF's `spiffsgen.py` (v5.2.1)            | All 4 files extracted **byte-identical**, including a 10 KiB multi-page file and a nested path           |
 

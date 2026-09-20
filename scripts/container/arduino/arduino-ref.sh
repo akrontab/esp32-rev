@@ -92,24 +92,32 @@ fi
 cp "$ELF" "$OUT/reference.elf"
 
 # The core also ships prebuilt, symbol-bearing static libs; point Ghidra at
-# these too for extra coverage beyond what the sketch links.
-LIBDIR="$(find "$ARDUINO_DIRECTORIES_DATA" -type d -path "*esp32-arduino-libs*/${CHIP}" 2>/dev/null | head -1 || true)"
+# these too for extra coverage beyond what the sketch links. The layout differs
+# by core line: 2.0.x uses tools/sdk/<chip>/lib, 3.0.x uses esp32-arduino-libs.
+LIBDIR="$(find "$ARDUINO_DIRECTORIES_DATA" -type d \
+    \( -path "*esp32-arduino-libs*/${CHIP}/lib" -o -path "*/hardware/esp32/*/tools/sdk/${CHIP}/lib" \) \
+    2>/dev/null | head -1 || true)"
 
 # --- Deterministic IDF check ------------------------------------------------
-# arduino-esp32 pins one ESP-IDF per release, and the prebuilt-libs path encodes
-# it (idf-release_v4.4_<date>). Compare that (major.minor) to the badge's own IDF
-# (from the analysis metadata) so you KNOW this core's IDF line matches before
-# spending time in Ghidra - no version table to trust, just the two values.
-maj_min() { printf '%s' "$1" | grep -oE '[0-9]+\.[0-9]+' | head -1; }
+# The installed core records its exact ESP-IDF in platform.txt as
+# IDF_VER="v4.4.7-dirty" (true for both 2.0.x and 3.0.x). Compare that full
+# patch-level version to the badge's own IDF (from the analysis metadata) so you
+# KNOW whether this core matches before spending time in Ghidra - no version
+# table to trust. Every extraction is `|| true` so a miss never aborts the run.
+ver3() { printf '%s' "$1" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || true; }
 
-CORE_IDF="$(maj_min "$(printf '%s' "$LIBDIR" | grep -oE 'v[0-9]+\.[0-9]+' | head -1)")"
+CORE_IDF=""
+CORE_PLATFORM="$ARDUINO_DIRECTORIES_DATA/packages/esp32/hardware/esp32/$VER/platform.txt"
+if [ -f "$CORE_PLATFORM" ]; then
+    CORE_IDF="$(ver3 "$(grep -oE 'IDF_VER="[^"]+"' "$CORE_PLATFORM" 2>/dev/null | head -1 || true)")"
+fi
 
 BADGE_IDF=""
 if [ -f "$WORK/meta/parts_manifest.json" ]; then
-    BADGE_IDF="$(maj_min "$(grep -oE 'idf=v?[0-9]+\.[0-9]+' "$WORK/meta/parts_manifest.json" | head -1)")"
+    BADGE_IDF="$(ver3 "$(grep -oE 'idf=v?[0-9]+\.[0-9]+\.[0-9]+' "$WORK/meta/parts_manifest.json" 2>/dev/null | head -1 || true)")"
 fi
 if [ -z "$BADGE_IDF" ] && [ -f "$WORK/reports/triage.txt" ]; then
-    BADGE_IDF="$(maj_min "$(grep -oE 'esp-idf: v[0-9]+\.[0-9]+' "$WORK/reports/triage.txt" | head -1)")"
+    BADGE_IDF="$(ver3 "$(grep -oE 'esp-idf: v[0-9]+\.[0-9]+\.[0-9]+' "$WORK/reports/triage.txt" 2>/dev/null | head -1 || true)")"
 fi
 
 IDF_MATCH="unknown"
@@ -136,10 +144,16 @@ echo "    reference/arduino-esp32-${VER}/reference.elf   (symbolised - feed to G
 echo
 echo "[*] IDF check:  badge=${BADGE_IDF:-?}   this core (arduino-esp32 $VER)=${CORE_IDF:-?}"
 case "$IDF_MATCH" in
-    yes) echo "    MATCH - this core's IDF line matches the badge. Good version to FID against." ;;
-    no)  echo "    MISMATCH - rebuild with a core on the badge's IDF line and FID that instead:"
-         echo "               IDF v4.4.x -> arduino-esp32 2.0.x ;  IDF v5.1.x -> 3.0.x ;  v5.3.x -> 3.1.x." ;;
-    *)   echo "    could not compare (missing badge IDF or libs path) - check reports/triage.txt by hand." ;;
+    yes) echo "    MATCH - exact IDF ($CORE_IDF). This is the right core; FID against it." ;;
+    no)  if [ "${BADGE_IDF%.*}" = "${CORE_IDF%.*}" ]; then
+             echo "    NEAR - same IDF line, different patch (badge $BADGE_IDF vs core $CORE_IDF)."
+             echo "           Usually still a strong FID match. If it's weak, build a neighbouring"
+             echo "           arduino-esp32 patch release, or use BinDiff."
+         else
+             echo "    MISMATCH - different IDF line. Rebuild on the badge's line and FID that:"
+             echo "               IDF v4.4.x -> arduino-esp32 2.0.x ; v5.1.x -> 3.0.x ; v5.3.x -> 3.1.x."
+         fi ;;
+    *)   echo "    could not compare (missing badge or core IDF) - check reports/triage.txt by hand." ;;
 esac
 echo
 echo "    Apply the symbols to the badge in Ghidra - see docs/name-recovery.md."
