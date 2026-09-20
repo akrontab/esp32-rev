@@ -30,16 +30,27 @@ PY
 
 echo "[*] language=$LANG  entry=$ENTRY  primary=$PRIMARY_FILE @ $PRIMARY_BASE"
 
-PROJ_DIR="$(mktemp -d)"
-PROJ_NAME="esp32"
 mkdir -p "$OUT"
+PROJ_NAME="badge"
 
 # analyzeHeadless: import the primary segment as raw binary at its base with the
 # chosen processor; AddSegments (preScript) maps the others; analysis runs;
-# ExportArtifacts (postScript) writes the reports. -deleteProject keeps the
-# workspace clean (we keep the exported files, not the .gpr) unless -keep given.
+# ExportArtifacts (postScript) writes the reports. By default -deleteProject
+# keeps the workspace clean (we keep the exported files, not the .gpr).
+#
+# With --keep, persist the analyzed project INTO the workspace (reports/ghidra/
+# project/) instead of a throwaway temp dir, so [34] can open it directly -
+# fully mapped, analysed and named - with no manual segment import. Cleared
+# first so a re-run starts fresh (no stale lock / import-name clash).
 KEEP="-deleteProject"
-[ "${2:-}" = "--keep" ] && KEEP=""
+if [ "${2:-}" = "--keep" ]; then
+    KEEP=""
+    PROJ_DIR="$OUT/project"
+    rm -rf "$PROJ_DIR"
+    mkdir -p "$PROJ_DIR"
+else
+    PROJ_DIR="$(mktemp -d)"
+fi
 
 echo "[*] Running Ghidra headless (this can take several minutes on a big image)"
 analyzeHeadless "$PROJ_DIR" "$PROJ_NAME" \
@@ -66,6 +77,11 @@ if [ -f "$OUT/decompiled.c" ]; then
   echo
   echo "[*] Triaging the decompilation into a ranked shortlist"
   gh-leads.py "$OUT" || echo "[!] lead triage skipped (see above)"
+  if [ -z "$KEEP" ]; then
+    echo
+    echo "[+] Project kept at ${PROJ_DIR#"$WORK"/}/${PROJ_NAME}.gpr"
+    echo "    Open it directly in the GUI with [34] - already mapped, analysed and named."
+  fi
 else
   echo "[!] No decompiled.c produced - check the headless output above."
   echo "    If the image is encrypted, disassembly is not meaningful."

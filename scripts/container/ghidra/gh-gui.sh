@@ -42,6 +42,24 @@ echo
 # it - the container would exit while Ghidra is still running. Keep the
 # container alive on the noVNC bridge instead (that's what serves the GUI);
 # Ctrl-C tears it all down.
-DISPLAY=:1 "$GHIDRA_HOME/ghidraRun" >/tmp/ghidra.log 2>&1 &
+# If [33]/[36] --keep left an analysed project in the workspace, open it
+# directly (already mapped, analysed and named - no manual segment import).
+PROJ=""
+GPRS=()
+if [ -d /work/reports/ghidra ]; then
+    while IFS= read -r g; do GPRS+=("$g"); done \
+        < <(find /work/reports/ghidra -name '*.gpr' 2>/dev/null | sort)
+fi
+if [ "${#GPRS[@]}" -eq 1 ]; then
+    PROJ="${GPRS[0]}"
+    echo "[*] Opening analysed project: ${PROJ#/work/}"
+elif [ "${#GPRS[@]}" -gt 1 ]; then
+    echo "[*] Several analysed projects under reports/ghidra/ - opening the project manager:"
+    for g in "${GPRS[@]}"; do echo "    ${g#/work/}"; done
+else
+    echo "[*] No saved project found - run [33] with 'keep' to skip the manual import."
+fi
+
+DISPLAY=:1 "$GHIDRA_HOME/ghidraRun" ${PROJ:+"$PROJ"} >/tmp/ghidra.log 2>&1 &
 trap 'echo "[*] stopping"; vncserver -kill :1 >/dev/null 2>&1 || true; kill $WS_PID 2>/dev/null || true' INT TERM
 wait $WS_PID

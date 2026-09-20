@@ -284,7 +284,10 @@ function Invoke-GhidraHeadless {
     }
     Write-Info "Headless Ghidra: maps segments at their load addresses, analyzes, exports decompilation + a ranked code-leads.txt."
     Write-Info "This can take several minutes on a full app image."
-    Invoke-Container -Image ghidra -Command @('gh-analyze.sh', "/work/$img")
+    $keep = Confirm-Action "Keep the analysed project so [34] opens it directly (skips the manual GUI import; more disk)?" -Default
+    $cmd = @('gh-analyze.sh', "/work/$img")
+    if ($keep) { $cmd += '--keep' }
+    Invoke-Container -Image ghidra -Command $cmd
 }
 
 function Invoke-GhidraDumpAnalyze {
@@ -298,7 +301,10 @@ function Invoke-GhidraDumpAnalyze {
     }
     Write-Info "Ghidra over the whole dump: bootloader + every app slot that holds firmware."
     Write-Info "Each image is decompiled into reports\ghidra\<image>\. This runs Ghidra once per image."
-    Invoke-Container -Image ghidra -Command @('gh-dump.sh', "/work/$dump")
+    $keep = Confirm-Action "Keep each image's analysed project for [34]? (one project per image; more disk)"
+    $cmd = @('gh-dump.sh', "/work/$dump")
+    if ($keep) { $cmd += '--keep' }
+    Invoke-Container -Image ghidra -Command $cmd
 }
 
 function Invoke-ArduinoReference {

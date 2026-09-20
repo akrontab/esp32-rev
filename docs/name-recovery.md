@@ -45,21 +45,22 @@ how well the version lines up (§3A FunctionID, §3B BinDiff).
 
 ### Getting set up in the GUI
 
-0. **Run `[33]` once first.** The segment files you import below
-   (`reports/ghidra/seg_*.bin` + `segments.json`) are produced by `[33]`
-   (`gh-prep`), *not* by acquire/`[12]` — so a workspace that's only been
-   acquired has an empty (or missing) `reports/ghidra/`. `[33]` keeps these files
-   after its run, and `[33]` and `[34]` mount the **same** workspace at `/work`,
-   so once `[33]` has run they're right there in the GUI. (No `[33]` yet =
-   nothing to import.)
+0. **Run `[33]` once first, and answer *yes* to "keep the analysed project".**
+   That saves a ready Ghidra project into `reports/ghidra/project/` — segments
+   mapped, analysis done, ROM names applied — instead of throwing it away. (All
+   of this is produced by `[33]`/`gh-prep`, *not* by acquire/`[12]`; `[33]` and
+   `[34]` share the `/work` mount, so what `[33]` writes is what `[34]` sees.)
 1. **Launch `[34]`** and open `http://localhost:6080/vnc.html` → Connect.
-   (If `[34]` starts and immediately dies, rebuild the ghidra image first — see
+   **If you kept a project, `[34]` opens it automatically** — the badge program
+   is already loaded, mapped and analysed, so **skip to step 3**. (If `[34]`
+   starts and immediately dies, rebuild the ghidra image first — see
    *Troubleshooting*.)
-2. **Load the badge** into the CodeBrowser: import the primary segment
-   `reports/ghidra/seg_<n>_<addr>.bin` as **Raw Binary**, language
-   `Xtensa:LE:32:default` (or `RISCV:LE:32:default` for C3/C6), base address from
-   `reports/ghidra/segments.json`; add the other segments as memory blocks at
-   their addresses (**Window → Memory Map**); then **Analysis → Auto Analyze**.
+2. **Only if you did *not* keep a project** — load the badge manually: import the
+   primary segment `reports/ghidra/seg_<n>_<addr>.bin` as **Raw Binary**,
+   language `Xtensa:LE:32:default` (or `RISCV:LE:32:default` for C3/C6), base
+   address from `reports/ghidra/segments.json`; add the other segments as memory
+   blocks at their addresses (**Window → Memory Map**); then **Analysis → Auto
+   Analyze**.
 3. **Import the reference**: **File → Import File** → `reference/arduino-esp32-<version>/reference.elf`, and auto-analyze it (it keeps its symbols).
 
 ### A. FunctionID — fast, native, best when the version matches

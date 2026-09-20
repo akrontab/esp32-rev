@@ -17,6 +17,7 @@ set -euo pipefail
 WORK="${WORK:-/work}"
 OUT="$WORK/reports/ghidra"
 DUMP="${1:-$WORK/dumps/flash_full.bin}"
+KEEP_ARG="${2:-}"    # pass "--keep" to persist each image's project for [34]
 
 if [ ! -f "$DUMP" ]; then
   echo "[x] flash dump not found: $DUMP"
@@ -75,7 +76,7 @@ with open(dump, "rb") as f:
     open(out, "wb").write(f.read(length))
 PY
 
-  if GHIDRA_OUT="$sub" gh-analyze.sh "$carved"; then
+  if GHIDRA_OUT="$sub" gh-analyze.sh "$carved" "$KEEP_ARG"; then
     if [ -f "$sub/functions.txt" ]; then
       n=$(wc -l < "$sub/functions.txt" | tr -d ' ')
       printf "%-14s %-11s %6s functions   reports/ghidra/%s/\n" \

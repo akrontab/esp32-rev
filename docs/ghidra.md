@@ -101,8 +101,11 @@ score, and why it was flagged, so you know what to open in the GUI (`[34]`) or
 every image of `[36]` (each slot gets its own `code-leads.txt`).
 
 By default the Ghidra project is deleted after export (only the reports are
-kept). Pass `--keep` (in the container shell) to retain the `.gpr` for opening
-in the GUI later.
+kept). `[33]` asks whether to **keep the analysed project** — say yes and it's
+saved into `reports/ghidra/project/` (segments mapped, analysed, ROM-named), and
+`[34]` will open it directly, so you skip the manual segment import in the GUI.
+(`[36]` offers the same, one project per image.) Under the hood that's the
+`--keep` flag to `gh-analyze.sh`.
 
 ### Cross-references and naming — `Enrich`
 
@@ -206,9 +209,16 @@ workspace is at `/work`.
 
 Use it for the deep dive after headless analysis has pointed you at the
 interesting functions — renaming, following cross-references, patching,
-scripting. To load the firmware here, import `reports/ghidra/seg_*.bin` at
-their addresses, or open the app image and set the language to
-`Xtensa:LE:32:default` (or `RISCV:LE:32:default` for C3/C6).
+scripting.
+
+**If `[33]`/`[36]` saved a project** (you answered yes to "keep"), `[34]` opens
+it automatically — the firmware is already mapped, analysed and ROM-named, so
+you can start reading straight away. If there are several kept projects (one per
+image from `[36]`), it opens the project manager listing them.
+
+Otherwise, load the firmware by hand: import `reports/ghidra/seg_*.bin` at their
+addresses, or open the app image and set the language to `Xtensa:LE:32:default`
+(or `RISCV:LE:32:default` for C3/C6).
 
 The port is published to `localhost` only, and the container is disposable with
 no VNC password — do not expose 6080 on a public interface.

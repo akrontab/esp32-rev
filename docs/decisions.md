@@ -341,6 +341,26 @@ downloads public packages and compiles offline; the badge is untouched).
 
 ---
 
+## D21 — `[33] --keep` persists the analysed project so `[34]` opens it directly
+
+**Decision.** With `--keep`, `gh-analyze.sh` now writes its Ghidra project into
+the workspace (`reports/ghidra/project/`, per-image subdir under `[36]`) instead
+of a throwaway temp dir, clearing it first so a re-run is fresh. `gh-gui.sh`
+scans `/work/reports/ghidra` for a `.gpr`: one → opens it directly; several →
+opens the project manager listing them; none → plain launch. `[33]` prompts to
+keep (default yes), `[36]` prompts too (default no — one project per image).
+
+**Why.** The GUI name-recovery flow required hand-importing each segment at its
+address because the headless run discarded its project — the exact seam the user
+kept hitting, made worse by the segments only existing after `[33]` at all.
+Persisting the already-mapped/analysed/ROM-named project removes that whole step:
+`[34]` opens ready to work. It lives on the shared `/work` mount, so no new
+plumbing between the (identical) headless and GUI containers. Kept off by default
+where it costs the most (`[36]`'s many images), on by default for the single
+`[33]` project that's the common case.
+
+---
+
 ## Validation
 
 The format parsers were checked against ground truth from Espressif's own
