@@ -128,11 +128,26 @@ appears (top level, or under **Tools**). If your build only lists it under an
    *linked*; your badge uses far more, so ingesting only the ELF leaves most
    functions unnamed. `[37]` copies the core's full precompiled static libs to
    **`/work/reference/arduino-esp32-<version>/lib/`** (dozens of `.a` archives,
-   the exact binaries the badge linked against). **Batch-import that `lib/`
-   folder** (File → Batch Import, or Import File on the folder), let Ghidra
-   auto-analyze the imported programs, and populate the FidDb from *those* (plus
-   `reference.elf`). That's thousands of functions to match against instead of
-   hundreds.
+   the exact binaries the badge linked against). Batch-import them:
+
+   1. **File → Batch Import…** → **Add** → select the
+      `/work/reference/arduino-esp32-<version>/lib/` folder (or its `*.a` files).
+      Ghidra reads each archive as a container and enumerates the object files
+      inside it — you'll see a long list.
+   2. Check the detected **Language** column reads `Xtensa:LE:32:default`
+      (`RISCV:LE:32:default` for C3/C6); set it if it's blank or wrong. Set the
+      destination **project folder** to something like `sdk-libs` (create it
+      here), then **Import**. This creates one small program per object — there
+      will be many.
+   3. **Analyze them so functions get defined** (FID hashes *defined* functions):
+      open the `sdk-libs` folder, select the programs, and run analysis
+      (**Analysis → Auto Analyze**). The objects are tiny so each is quick, but
+      there are a lot — let it finish. Defaults are fine.
+
+   If analyzing everything is too heavy, import just the big ones the badge
+   actually uses — `libesp32.a`, `libnet80211.a`, `libbt.a`, `libmbedtls*.a`,
+   `libc.a`, `libwpa_supplicant.a` — which cover most of a WiFi/BLE/crypto badge.
+   Then point the Populate dialog's **Root Folder** at `sdk-libs` (next step).
 1. **Function ID → Create new empty FidDb** → e.g. `esp32s3-idf447.fidb`.
 2. **Function ID → Populate FidDb from Programs.** This opens a dialog of text
    boxes — fill it (values for the arduino-esp32 2.0.16 / S3 example):
@@ -144,14 +159,15 @@ appears (top level, or under **Tools**). If your build only lists it under an
    | **Library Version**     | `2.0.16`                                                 | free-text label              |
    | **Library Variant**     | `esp32s3` (or `idf4.4.7`)                                | free-text label              |
    | **Base Library**        | *No Base Library*                                        | leave as-is                  |
-   | **Root Folder**         | the project folder holding `reference.elf` (usually `/`) | where it reads programs      |
+   | **Root Folder**         | `sdk-libs` (the imported libs) — or `/` to also fold in `reference.elf` | where it reads programs |
    | **Language**            | `Xtensa:LE:32:default` (`RISCV:...` for C3/C6)           | must match the reference     |
    | **Common Symbols File** | *(blank)*                                                | optional                     |
 
    Family / Version / Variant are just labels to tell libraries apart later; the
    ones that matter are **Fid Database**, **Root Folder**, and **Language**. The
-   `reference.elf` must already be **imported and auto-analyzed** in that Root
-   Folder, with a matching language, or nothing is ingested.
+   programs in that Root Folder (the imported `sdk-libs` and/or `reference.elf`)
+   must already be **imported and auto-analyzed** (step 0), with a matching
+   language, or nothing is ingested.
 
    **Where the ingest count shows up:** FID populate runs from the **Ghidra
    Project window** (front end), and reports to the log — a short summary dialog
