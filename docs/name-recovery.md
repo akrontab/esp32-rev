@@ -45,6 +45,13 @@ how well the version lines up (§3A FunctionID, §3B BinDiff).
 
 ### Getting set up in the GUI
 
+0. **Run `[33]` once first.** The segment files you import below
+   (`reports/ghidra/seg_*.bin` + `segments.json`) are produced by `[33]`
+   (`gh-prep`), *not* by acquire/`[12]` — so a workspace that's only been
+   acquired has an empty (or missing) `reports/ghidra/`. `[33]` keeps these files
+   after its run, and `[33]` and `[34]` mount the **same** workspace at `/work`,
+   so once `[33]` has run they're right there in the GUI. (No `[33]` yet =
+   nothing to import.)
 1. **Launch `[34]`** and open `http://localhost:6080/vnc.html` → Connect.
    (If `[34]` starts and immediately dies, rebuild the ghidra image first — see
    *Troubleshooting*.)
@@ -143,5 +150,8 @@ and `code-leads.txt` were written by the earlier headless run and still say
   the grouped view. Click **"Configure All Plugins"** (plug icon), filter `Fid`,
   enable **`FidPlugin`**. See §3A. No FunctionID module at all → use BinDiff (§3B)
   or rename manually (press **L** on a function).
+- **Nothing to import in the GUI — no `seg_*.bin`.** Those come from `[33]`, not
+  acquire/`[12]`. If `reports/ghidra/` is empty, run `[33]` once; it writes the
+  segments into the shared `/work`, so `[34]` then sees them (see §3 step 0).
 
 See also [ghidra.md](ghidra.md).
